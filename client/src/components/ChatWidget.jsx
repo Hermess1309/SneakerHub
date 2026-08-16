@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { listProduct } from '../config/ProductRequest';
 import { requestGetMessages, requestSendMessage } from '../config/MessageRequest';
@@ -9,10 +9,12 @@ import { Sparkles, Headphones, Paperclip } from 'lucide-react';
 
 function ChatWidget() {
     const location = useLocation();
+    const navigate = useNavigate();
     const { dataUser } = useStore();
     const [isOpen, setIsOpen] = useState(false);
     const [activeMode, setActiveMode] = useState('ai'); // 'ai' or 'human'
     const [productList, setProductList] = useState([]);
+    const [suggestedProducts, setSuggestedProducts] = useState([]);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -100,37 +102,20 @@ function ChatWidget() {
     };
 
     const renderMessageText = (content) => {
-        if (content.includes('- Nike') || content.includes('- Adidas') || content.includes('- Jordan')) {
+        if (content.includes('- ')) {
             const lines = content.split('\n');
             return (
                 <div className="space-y-1">
                     {lines.map((line, idx) => {
-                        if (line.includes('Nike Air Force 1')) {
-                            const nikeProd = productList.find(p => p.nameProduct?.toLowerCase().includes('force 1') || p.nameProduct?.toLowerCase().includes('nike air force'));
-                            if (nikeProd) {
+                        const match = line.match(/^-\s*(.*?)\s*\((.*?)\)$/);
+                        if (match) {
+                            const prodName = match[1];
+                            const prodDesc = match[2];
+                            const prod = productList.find(p => p.nameProduct === prodName);
+                            if (prod) {
                                 return (
                                     <div key={idx}>
-                                        - <Link to={`/product/${nikeProd._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>Nike Air Force 1 '07</Link> (Trẻ trung, năng động)
-                                    </div>
-                                );
-                            }
-                        }
-                        if (line.includes('Adidas Samba') || line.includes('Adidas Ultraboost')) {
-                            const adidasProd = productList.find(p => p.nameProduct?.toLowerCase().includes('adidas'));
-                            if (adidasProd) {
-                                return (
-                                    <div key={idx}>
-                                        - <Link to={`/product/${adidasProd._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>{adidasProd.nameProduct}</Link> (Thanh lịch, dễ phối đồ)
-                                    </div>
-                                );
-                            }
-                        }
-                        if (line.includes('Jordan 1')) {
-                            const jordanProd = productList.find(p => p.nameProduct?.toLowerCase().includes('jordan 1') || p.nameProduct?.toLowerCase().includes('jordan'));
-                            if (jordanProd) {
-                                return (
-                                    <div key={idx}>
-                                        - <Link to={`/product/${jordanProd._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>Jordan 1 Low Retro</Link> (Thời trang, cá tính)
+                                        - <Link to={`/product/${prod._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>{prodName}</Link> ({prodDesc})
                                     </div>
                                 );
                             }
@@ -147,11 +132,28 @@ function ChatWidget() {
     const triggerAiReply = (userText) => {
         const textLower = userText.toLowerCase();
         let aiReply = '';
+        let matchedProducts = [];
+
+        // Clear previous suggestions on other questions
+        setSuggestedProducts([]);
 
         if (textLower.includes('size') || textLower.includes('kích thước') || textLower.includes('kích cỡ') || textLower.includes('đo chân')) {
             aiReply = 'Dạ SneakerHub xin tư vấn kích thước (size) cho anh/chị ạ! Thông thường đối với Nike Air Force 1 hoặc Jordan 1, anh/chị nên chọn đúng size chuẩn (true to size). Với giày chạy bộ Adidas Ultraboost hoặc Yeezy, anh/chị nên tăng lên 0.5 đến 1 size để đi thoải mái nhất ạ. Anh/chị đang quan tâm dòng nào ạ?';
         } else if (textLower.includes('tìm sản phẩm') || textLower.includes('mua giày') || textLower.includes('giày hot') || textLower.includes('sản phẩm')) {
-            aiReply = 'Dạ hiện tại SneakerHub đang có các dòng sản phẩm bán rất chạy như:\n- Nike Air Force 1 \'07 (Trẻ trung, năng động)\n- Adidas Samba OG (Thanh lịch, dễ phối đồ)\n- Jordan 1 Low Retro (Thời trang, cá tính)\nAnh/chị có thể tìm kiếm trên thanh tìm kiếm của Web hoặc click vào danh mục Thương hiệu để xem chi tiết nhé!';
+            const getRandomProducts = (list, count = 3) => {
+                if (!list || list.length === 0) return [];
+                const shuffled = [...list].sort(() => 0.5 - Math.random());
+                return shuffled.slice(0, count);
+            };
+            const randomProds = getRandomProducts(productList, 3);
+            if (randomProds.length > 0) {
+                matchedProducts = randomProds;
+                aiReply = 'Dạ hiện tại SneakerHub đang có các dòng sản phẩm bán rất chạy như:\n' +
+                    randomProds.map(p => `- ${p.nameProduct} (${p.descriptionProduct ? p.descriptionProduct.substring(0, 30) + '...' : 'Trẻ trung, năng động'})`).join('\n') +
+                    '\nAnh/chị có thể tìm kiếm trên thanh tìm kiếm của Web hoặc click trực tiếp vào các nút gợi ý sản phẩm bên dưới để xem chi tiết nhé!';
+            } else {
+                aiReply = 'Dạ hiện tại shop chưa có sản phẩm nào có sẵn trên hệ thống ạ.';
+            }
         } else if (textLower.includes('đơn hàng') || textLower.includes('kiểm tra đơn') || textLower.includes('lịch sử đơn')) {
             aiReply = 'Dạ để kiểm tra đơn hàng, anh/chị vui lòng đăng nhập tài khoản, nhấp vào Avatar góc trên cùng bên phải và chọn "Lịch sử mua hàng". Ở đó sẽ có mã vận đơn và trạng thái giao hàng chi tiết của anh/chị ạ!';
         } else if (textLower.includes('khuyến mãi') || textLower.includes('mã giảm giá') || textLower.includes('coupon') || textLower.includes('giảm giá')) {
@@ -172,8 +174,11 @@ function ChatWidget() {
                     createdAt: new Date().toISOString()
                 }
             ]);
+            if (matchedProducts.length > 0) {
+                setSuggestedProducts(matchedProducts);
+            }
             scrollToBottom();
-        }, 6000); // 600ms simulation delay
+        }, 800); // 800ms simulation delay
     };
 
     const handleSendMessage = async (textToSend = null) => {
@@ -378,36 +383,62 @@ function ChatWidget() {
 
                     {/* Quick Reply Suggestions Row */}
                     <div className="px-3 py-2 border-t border-gray-150 bg-white flex gap-2 overflow-x-auto shrink-0 scrollbar-none">
-                        <button
-                            onClick={() => handleQuickReply('Tìm sản phẩm')}
-                            className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
-                        >
-                            🔍 Tìm sản phẩm
-                        </button>
-                        <button
-                            onClick={() => handleQuickReply('Tư vấn kích thước')}
-                            className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
-                        >
-                            📏 Tư vấn kích thước
-                        </button>
-                        <button
-                            onClick={() => handleQuickReply('Kiểm tra đơn hàng')}
-                            className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
-                        >
-                            📦 Kiểm tra đơn hàng
-                        </button>
-                        <button
-                            onClick={() => handleQuickReply('Xem khuyến mãi')}
-                            className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
-                        >
-                            🏷️ Xem khuyến mãi
-                        </button>
-                        <button
-                            onClick={() => handleQuickReply('Chính sách đổi trả')}
-                            className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
-                        >
-                            🔄 Chính sách đổi trả
-                        </button>
+                        {suggestedProducts.length > 0 && activeMode === 'ai' ? (
+                            <>
+                                <button
+                                    onClick={() => setSuggestedProducts([])}
+                                    className="bg-gray-100 border border-gray-300 text-gray-700 px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer shrink-0 hover:bg-gray-200 transition-all flex items-center gap-1 shadow-sm"
+                                >
+                                    🔙 Quay lại
+                                </button>
+                                {suggestedProducts.map(p => (
+                                    <button
+                                        key={p._id}
+                                        onClick={() => {
+                                            setIsOpen(false);
+                                            setSuggestedProducts([]);
+                                            navigate(`/product/${p._id}`);
+                                        }}
+                                        className="bg-blue-50 border border-blue-200 hover:border-blue-400 text-blue-700 px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer shrink-0 transition-all flex items-center gap-1.5 shadow-sm"
+                                    >
+                                        👟 {p.nameProduct}
+                                    </button>
+                                ))}
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => handleQuickReply('Tìm sản phẩm')}
+                                    className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
+                                >
+                                    🔍 Tìm sản phẩm
+                                </button>
+                                <button
+                                    onClick={() => handleQuickReply('Tư vấn kích thước')}
+                                    className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
+                                >
+                                    📏 Tư vấn kích thước
+                                </button>
+                                <button
+                                    onClick={() => handleQuickReply('Kiểm tra đơn hàng')}
+                                    className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
+                                >
+                                    📦 Kiểm tra đơn hàng
+                                </button>
+                                <button
+                                    onClick={() => handleQuickReply('Xem khuyến mãi')}
+                                    className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
+                                >
+                                    🏷️ Xem khuyến mãi
+                                </button>
+                                <button
+                                    onClick={() => handleQuickReply('Chính sách đổi trả')}
+                                    className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
+                                >
+                                    🔄 Chính sách đổi trả
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* Input controls footer */}
