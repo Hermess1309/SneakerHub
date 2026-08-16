@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { requestPaymentsUser } from '../config/paymentRequest';
-import { Table, Tag, Button, Spin, Empty, Descriptions, Modal, Upload, Input, message } from 'antd';
+import { Table, Tag, Button, Spin, Empty, Descriptions, Modal, Upload, Input, Select, message } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import { createFeedback } from '../config/FeedbackRequest';
 import { createComplaint, listUserComplaints } from '../config/ComplaintRequest';
+
+const { Option } = Select;
 
 function OrderHistory() {
     const [orders, setOrders] = useState([]);
@@ -250,19 +252,34 @@ function OrderHistory() {
         {
             title: 'Hành động',
             key: 'actions',
+            width: 180,
             render: (_, record) => (
-                <Button
-                    type="primary"
-                    ghost
-                    icon={<EyeOutlined />}
-                    size="small"
-                    onClick={() => {
-                        setSelectedOrder(record);
-                        setDetailVisible(true);
-                    }}
-                >
-                    Chi tiết
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        type="primary"
+                        ghost
+                        icon={<EyeOutlined />}
+                        size="small"
+                        onClick={() => {
+                            setSelectedOrder(record);
+                            setDetailVisible(true);
+                        }}
+                    >
+                        Chi tiết
+                    </Button>
+                    {record.status !== 'cancelled' && (
+                        <Button
+                            danger
+                            size="small"
+                            onClick={() => {
+                                const firstProd = record.products?.[0]?.productId || null;
+                                openComplaintModal(record._id, firstProd);
+                            }}
+                        >
+                            Khiếu nại
+                        </Button>
+                    )}
+                </div>
             )
         }
     ];
@@ -274,7 +291,7 @@ function OrderHistory() {
                     <Header />
                 </header>
 
-                <main className="container mx-auto px-4 py-8 max-w-5xl">
+                <main className="mx-auto px-4 py-8 max-w-[94%] w-full">
                     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">Đơn hàng của tôi</h2>
@@ -295,6 +312,7 @@ function OrderHistory() {
                                 dataSource={orders}
                                 rowKey="_id"
                                 pagination={{ pageSize: 6 }}
+                                scroll={{ x: 1000 }}
                                 className="border border-gray-200 rounded-xl overflow-hidden"
                             />
                         )}
@@ -425,26 +443,30 @@ function OrderHistory() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-sm truncate text-gray-900">{prod.nameProduct || 'Sản phẩm đã xóa'}</p>
                                                 <p className="text-xs text-gray-500 mb-1">Số lượng: {item.quantity}</p>
-                                                {selectedOrder.status === 'completed' && prod._id && (
+                                                {prod._id && (
                                                     <div className="flex gap-2 mt-1">
-                                                        {hasReviewed(selectedOrder._id, prod._id) ? (
-                                                            <span className="inline-block text-[10px] bg-gray-150 text-gray-500 font-semibold px-2 py-0.5 rounded-full border border-gray-250">
-                                                                ✓ Đã đánh giá
-                                                            </span>
-                                                        ) : (
+                                                        {selectedOrder.status === 'completed' && (
+                                                            hasReviewed(selectedOrder._id, prod._id) ? (
+                                                                <span className="inline-block text-[10px] bg-gray-150 text-gray-500 font-semibold px-2 py-0.5 rounded-full border border-gray-250">
+                                                                    ✓ Đã đánh giá
+                                                                </span>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => openFeedbackModal(selectedOrder._id, prod)}
+                                                                    className="text-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 font-bold px-2.5 py-0.5 rounded-full transition cursor-pointer border border-blue-200"
+                                                                >
+                                                                    Viết đánh giá
+                                                                </button>
+                                                            )
+                                                        )}
+                                                        {selectedOrder.status !== 'cancelled' && (
                                                             <button
-                                                                onClick={() => openFeedbackModal(selectedOrder._id, prod)}
-                                                                className="text-[10px] bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 font-bold px-2.5 py-0.5 rounded-full transition cursor-pointer border border-blue-200"
+                                                                onClick={() => openComplaintModal(selectedOrder._id, prod)}
+                                                                className="text-[10px] bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold px-2.5 py-0.5 rounded-full transition cursor-pointer border border-red-200"
                                                             >
-                                                                Viết đánh giá
+                                                                Khiếu nại
                                                             </button>
                                                         )}
-                                                        <button
-                                                            onClick={() => openComplaintModal(selectedOrder._id, prod)}
-                                                            className="text-[10px] bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-bold px-2.5 py-0.5 rounded-full transition cursor-pointer border border-red-200"
-                                                        >
-                                                            Khiếu nại
-                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
