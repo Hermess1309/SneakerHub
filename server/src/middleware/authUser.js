@@ -73,6 +73,7 @@ const authAdmin = async (req, res, next) => {
         if (findUser.isAdmin === false) {
             throw new ForbiddenError('Bạn không có quyền truy cập');
         }
+        req.user = decoded.id;
         next();
     } catch (error) {
         throw new ForbiddenError('Bạn không có quyền truy cập');
