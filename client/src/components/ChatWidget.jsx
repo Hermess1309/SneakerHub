@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
+import { listProduct } from '../config/ProductRequest';
 import { requestGetMessages, requestSendMessage } from '../config/MessageRequest';
 import { Input, Badge, message } from 'antd';
 import { CloseOutlined, SendOutlined } from '@ant-design/icons';
@@ -11,6 +12,19 @@ function ChatWidget() {
     const { dataUser } = useStore();
     const [isOpen, setIsOpen] = useState(false);
     const [activeMode, setActiveMode] = useState('ai'); // 'ai' or 'human'
+    const [productList, setProductList] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await listProduct();
+                setProductList(res.metadata || []);
+            } catch (error) {
+                console.error('Error fetching products for chat:', error);
+            }
+        };
+        fetchProducts();
+    }, []);
     
     // Human Chat States
     const [humanMessages, setHumanMessages] = useState([]);
@@ -83,6 +97,50 @@ function ChatWidget() {
         setTimeout(() => {
             chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
+    };
+
+    const renderMessageText = (content) => {
+        if (content.includes('- Nike') || content.includes('- Adidas') || content.includes('- Jordan')) {
+            const lines = content.split('\n');
+            return (
+                <div className="space-y-1">
+                    {lines.map((line, idx) => {
+                        if (line.includes('Nike Air Force 1')) {
+                            const nikeProd = productList.find(p => p.nameProduct?.toLowerCase().includes('force 1') || p.nameProduct?.toLowerCase().includes('nike air force'));
+                            if (nikeProd) {
+                                return (
+                                    <div key={idx}>
+                                        - <Link to={`/product/${nikeProd._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>Nike Air Force 1 '07</Link> (Trẻ trung, năng động)
+                                    </div>
+                                );
+                            }
+                        }
+                        if (line.includes('Adidas Samba') || line.includes('Adidas Ultraboost')) {
+                            const adidasProd = productList.find(p => p.nameProduct?.toLowerCase().includes('adidas'));
+                            if (adidasProd) {
+                                return (
+                                    <div key={idx}>
+                                        - <Link to={`/product/${adidasProd._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>{adidasProd.nameProduct}</Link> (Thanh lịch, dễ phối đồ)
+                                    </div>
+                                );
+                            }
+                        }
+                        if (line.includes('Jordan 1')) {
+                            const jordanProd = productList.find(p => p.nameProduct?.toLowerCase().includes('jordan 1') || p.nameProduct?.toLowerCase().includes('jordan'));
+                            if (jordanProd) {
+                                return (
+                                    <div key={idx}>
+                                        - <Link to={`/product/${jordanProd._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>Jordan 1 Low Retro</Link> (Thời trang, cá tính)
+                                    </div>
+                                );
+                            }
+                        }
+                        return <div key={idx}>{line}</div>;
+                    })}
+                </div>
+            );
+        }
+        return <span className="whitespace-pre-line">{content}</span>;
     };
 
     // AI Bot Reply Logic
@@ -246,7 +304,7 @@ function ChatWidget() {
                                                 <span className="font-extrabold text-[9px] text-amber-700 uppercase tracking-wider mb-1 block">
                                                     SNEAKERHUB AI
                                                 </span>
-                                                <span className="whitespace-pre-line">{msg.content}</span>
+                                                {renderMessageText(msg.content)}
                                             </div>
                                             {/* "Chuyển sang nhân viên" button inside AI welcome msg */}
                                             {msg._id === 'ai-init' && (
@@ -292,7 +350,7 @@ function ChatWidget() {
                                                     <span className="font-extrabold text-[9px] text-amber-700 uppercase tracking-wider mb-1 block">
                                                         NHÂN VIÊN HỖ TRỢ
                                                     </span>
-                                                    <span>{msg.content}</span>
+                                                    {renderMessageText(msg.content)}
                                                 </div>
                                                 <span className="text-[9px] text-gray-400 mt-1 px-1">
                                                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
