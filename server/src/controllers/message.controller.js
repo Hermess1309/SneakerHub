@@ -2,7 +2,6 @@ const Message = require('../models/message.model');
 const User = require('../models/user.model');
 const { OK, Created } = require('../core/success.response');
 const { BadRequestError } = require('../core/error.response');
-const mongoose = require('mongoose');
 
 class MessageController {
     // 1. Get chat messages
@@ -20,13 +19,11 @@ class MessageController {
 
         // Mark messages as read
         if (isAdmin && req.query.userId) {
-            // Admin reading: mark user's messages as read
             await Message.updateMany(
                 { userId: targetUserId, senderId: targetUserId, isRead: false },
                 { $set: { isRead: true } }
             );
         } else if (!isAdmin) {
-            // User reading: mark Admin's replies as read
             await Message.updateMany(
                 { userId: currentUser, senderId: { $ne: currentUser }, isRead: false },
                 { $set: { isRead: true } }
@@ -62,8 +59,21 @@ class MessageController {
                 throw new BadRequestError('User ID is required for Admin reply');
             }
             conversationId = userId;
+            
+            // Set status to chatting if it was waiting or closed
+            const clientUser = await User.findById(userId);
+            if (clientUser && clientUser.chatStatus !== 'chatting') {
+                clientUser.chatStatus = 'chatting';
+                await clientUser.save();
+            }
         } else {
             conversationId = currentUser;
+
+            // Set client status to waiting if not chatting
+            if (user && user.chatStatus !== 'chatting') {
+                user.chatStatus = 'waiting';
+                await user.save();
+            }
         }
 
         const newMessage = await Message.create({
@@ -123,7 +133,8 @@ class MessageController {
                     unreadCount: 1,
                     "userInfo.fullName": 1,
                     "userInfo.email": 1,
-                    "userInfo.isAdmin": 1
+                    "userInfo.isAdmin": 1,
+                    "userInfo.chatStatus": 1
                 }
             },
             {
@@ -134,6 +145,66 @@ class MessageController {
         new OK({
             message: 'Get conversations successfully',
             metadata: conversations
+        }).send(res);
+    };
+
+    // 4. Accept chat (Admin only)
+    acceptChat = async (req, res) => {
+        const { userId } = req.body;
+        if (!userId) {
+            throw new BadRequestError('User ID is required');
+        }
+
+        await User.findByIdAndUpdate(userId, { chatStatus: 'chatting' });
+
+        await Message.create({
+            userId: userId,
+            senderId: req.user,
+            content: 'Nhân viên chăm sóc khách hàng đã chấp nhận yêu cầu và tham gia hỗ trợ.',
+            isRead: false
+        });
+
+        new OK({
+            message: 'Chat accepted successfully'
+        }).send(res);
+    };
+
+    // 5. Close chat (Admin only)
+    closeChat = async (req, res) => {
+        const { userId } = req.body;
+        if (!userId) {
+            throw new BadRequestError('User ID is required');
+        }
+
+        await User.findByIdAndUpdate(userId, { chatStatus: 'closed' });
+
+        await Message.create({
+            userId: userId,
+            senderId: req.user,
+            content: 'Cuộc trò chuyện đã được đóng bởi nhân viên hỗ trợ. Xin cảm ơn quý khách!',
+            isRead: false
+        });
+
+        new OK({
+            message: 'Chat closed successfully'
+        }).send(res);
+    };
+
+    // 6. Get chat stats (Admin only)
+    getChatStats = async (req, res) => {
+        const activeUserIdsResult = await Message.distinct('userId');
+        
+        const waitingCount = await User.countDocuments({ _id: { $in: activeUserIdsResult }, chatStatus: 'waiting' });
+        const chattingCount = await User.countDocuments({ _id: { $in: activeUserIdsResult }, chatStatus: 'chatting' });
+        const closedCount = await User.countDocuments({ _id: { $in: activeUserIdsResult }, chatStatus: 'closed' });
+
+        new OK({
+            message: 'Get chat stats successfully',
+            metadata: {
+                waiting: waitingCount,
+                chatting: chattingCount,
+                closed: closedCount
+            }
         }).send(res);
     };
 }

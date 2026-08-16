@@ -24,3 +24,21 @@ export const requestGetConversations = async () => {
     const res = await request.get(`${apiMessage}/conversations`);
     return res.data;
 };
+
+// 4. Accept chat request (Admin only)
+export const requestAcceptChat = async (userId) => {
+    const res = await request.post(`${apiMessage}/accept`, { userId });
+    return res.data;
+};
+
+// 5. Close chat session (Admin only)
+export const requestCloseChat = async (userId) => {
+    const res = await request.post(`${apiMessage}/close`, { userId });
+    return res.data;
+};
+
+// 6. Get chat statistics (Admin only)
+export const requestGetChatStats = async () => {
+    const res = await request.get(`${apiMessage}/stats`);
+    return res.data;
+};
