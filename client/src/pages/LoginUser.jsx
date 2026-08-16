@@ -2,25 +2,49 @@ import Header from '../components/Header';
 import { Form, Input, Button, Checkbox, Divider, message } from 'antd';
 import { MailOutlined, LockOutlined, GoogleOutlined, FacebookOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { requestLogin } from '../config/UserRequest';
+import { useState, useEffect } from 'react';
+import { requestLogin, requestAuth } from '../config/UserRequest';
+import { useStore } from '../hooks/useStore';
 
 function LoginUser() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const { dataUser } = useStore();
+
+    useEffect(() => {
+        if (dataUser) {
+            const isAdminOrStaff = dataUser.role === 'admin' || dataUser.role === 'staff' || dataUser.isAdmin;
+            if (isAdminOrStaff) {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
+        }
+    }, [dataUser, navigate]);
 
     const onFinish = async (values) => {
         setLoading(true);
         try {
             const res = await requestLogin(values);
+            
+            // Check user role immediately
+            const authRes = await requestAuth();
+            const user = authRes.metadata || {};
 
             message.success('Đăng nhập thành công!');
+            
+            const isAdminOrStaff = user.role === 'admin' || user.role === 'staff' || user.isAdmin;
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
-            navigate('/');
+
+            if (isAdminOrStaff) {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
         } catch (error) {
-            message.error(error.response.data.message);
+            message.error(error.response?.data?.message || 'Lỗi đăng nhập');
             console.error('Login error:', error);
         } finally {
             setLoading(false);

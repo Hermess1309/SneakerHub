@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listCategory } from '../config/CategoryRequest';
 import { listProduct } from '../config/ProductRequest';
+import { getFlashSaleConfig } from '../config/FlashSaleRequest';
 import CardBody from './CardBody';
 import { Spin, Select, Radio, Checkbox } from 'antd';
 import { FunnelPlotOutlined } from '@ant-design/icons';
@@ -12,6 +13,8 @@ function HomePage() {
     const [dataCategory, setDataCategory] = useState([]);
     const [dataProduct, setDataProduct] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [flashSaleConfig, setFlashSaleConfig] = useState(null);
+    const [timeLeft, setTimeLeft] = useState(null);
 
     // React Router search params for state management
     const [searchParams, setSearchParams] = useSearchParams();
@@ -54,16 +57,49 @@ function HomePage() {
         setDataProduct(shuffled);
     };
 
+    const fetchFlashSale = async () => {
+        try {
+            const res = await getFlashSaleConfig();
+            if (res.metadata && res.metadata.isActive) {
+                setFlashSaleConfig(res.metadata);
+            }
+        } catch (error) {
+            console.error('Error fetching flash sale:', error);
+        }
+    };
+
     // Initial load - fetch categories and all products
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             await fetchCategory();
             await fetchProduct();
+            await fetchFlashSale();
             setLoading(false);
         };
         fetchData();
     }, []);
+
+    useEffect(() => {
+        if (!flashSaleConfig || !flashSaleConfig.endTime) return;
+
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = new Date(flashSaleConfig.endTime).getTime() - now;
+
+            if (distance < 0) {
+                setTimeLeft(null);
+                clearInterval(interval);
+            } else {
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                setTimeLeft({ hours, minutes, seconds });
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [flashSaleConfig]);
 
     // Reset sub-filters when brand category changes
     useEffect(() => {
@@ -389,9 +425,25 @@ function HomePage() {
                                             className="group cursor-pointer inline-flex flex-col items-center select-none"
                                         >
                                             <h2 className="relative text-2xl md:text-3xl font-bold text-black uppercase tracking-widest pb-1.5 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[3px] after:bg-black after:transition-all after:duration-300 group-hover:after:w-full">
-                                                Flash Deal
+                                                {flashSaleConfig?.title || 'Flash Deal'}
                                             </h2>
                                         </div>
+                                        {timeLeft && (
+                                            <div className="flex items-center gap-2 mt-4 select-none">
+                                                <span className="text-xs font-bold text-red-600 uppercase tracking-wider mr-2 animate-pulse">🔥 Kết thúc sau:</span>
+                                                <div className="bg-black text-white px-2.5 py-1.5 rounded-lg text-sm font-extrabold font-mono shadow-sm">
+                                                    {String(timeLeft.hours).padStart(2, '0')}
+                                                </div>
+                                                <span className="font-bold text-gray-700">:</span>
+                                                <div className="bg-black text-white px-2.5 py-1.5 rounded-lg text-sm font-extrabold font-mono shadow-sm">
+                                                    {String(timeLeft.minutes).padStart(2, '0')}
+                                                </div>
+                                                <span className="font-bold text-gray-700">:</span>
+                                                <div className="bg-black text-white px-2.5 py-1.5 rounded-lg text-sm font-extrabold font-mono shadow-sm">
+                                                    {String(timeLeft.seconds).padStart(2, '0')}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

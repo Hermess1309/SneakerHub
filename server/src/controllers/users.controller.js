@@ -3,6 +3,8 @@ const { Created, OK } = require('../core/success.response');
 
 const userModel = require('../models/user.model');
 const otpModel = require('../models/otp.model');
+const messageModel = require('../models/message.model');
+const paymentModel = require('../models/payment.model');
 const jwt = require('jsonwebtoken');
 
 const { createAccessToken, createRefreshToken, verifyToken } = require('../auth/checkAuth');
@@ -93,9 +95,14 @@ class UsersController {
             throw new NotFoundError('Người dùng không tồn tại');
         }
 
+        const userObj = findUser.toObject();
+        if (!userObj.role) {
+            userObj.role = findUser.isAdmin ? 'admin' : 'user';
+        }
+
         return new OK({
             message: 'Xác thực thành công',
-            metadata: findUser,
+            metadata: userObj,
         }).send(res);
     }
 
@@ -211,7 +218,7 @@ class UsersController {
     }
 
     async getAllUsers(req, res) {
-        const users = await userModel.find().select('-password');
+        const users = await userModel.find();
         return new OK({
             message: 'Lấy danh sách người dùng thành công',
             metadata: users,
@@ -233,10 +240,59 @@ class UsersController {
             throw new NotFoundError('Người dùng không tồn tại');
         }
         user.isAdmin = !user.isAdmin;
+        user.role = user.isAdmin ? 'admin' : 'user'; // keep role in sync
         await user.save();
         return new OK({
             message: 'Cập nhật quyền thành công',
             metadata: user,
+        }).send(res);
+    }
+
+    async updateRole(req, res) {
+        const { id } = req.params;
+        const { role } = req.body;
+        if (!['admin', 'staff', 'user'].includes(role)) {
+            throw new BadRequestError('Vai trò không hợp lệ');
+        }
+        const user = await userModel.findById(id);
+        if (!user) {
+            throw new NotFoundError('Người dùng không tồn tại');
+        }
+        user.role = role;
+        user.isAdmin = (role === 'admin' || role === 'staff');
+        await user.save();
+        return new OK({
+            message: 'Cập nhật vai trò thành công',
+            metadata: user,
+        }).send(res);
+    }
+
+    async getStaffReport(req, res) {
+        const { staffId } = req.params;
+        const staffUser = await userModel.findById(staffId);
+        if (!staffUser) {
+            throw new NotFoundError('Tài khoản nhân viên không tồn tại');
+        }
+
+        const confirmedOrders = await paymentModel.find({ confirmedBy: staffId })
+            .populate('userId', 'fullName email');
+
+        const sentMessages = await messageModel.find({ senderId: staffId })
+            .populate('userId', 'fullName email')
+            .sort({ createdAt: -1 });
+
+        return new OK({
+            message: 'Lấy báo cáo nhân viên thành công',
+            metadata: {
+                staffInfo: {
+                    _id: staffUser._id,
+                    fullName: staffUser.fullName,
+                    email: staffUser.email,
+                    role: staffUser.role
+                },
+                confirmedOrders,
+                sentMessages
+            }
         }).send(res);
     }
 

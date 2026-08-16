@@ -52,3 +52,13 @@ export const requestChangePassword = async (data) => {
     const res = await apiClient.put(`${apiUser}/change-password`, data);
     return res.data;
 };
+
+export const requestUpdateRole = async (id, role) => {
+    const res = await apiClient.put(`${apiUser}/admin/update-role/${id}`, { role });
+    return res.data;
+};
+
+export const requestGetStaffReport = async (staffId) => {
+    const res = await apiClient.get(`${apiUser}/admin/staff-report/${staffId}`);
+    return res.data;
+};

@@ -2,13 +2,26 @@ import Header from '../components/Header';
 import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, MailOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { requestRegister } from '../config/UserRequest';
+import { useStore } from '../hooks/useStore';
 
 function RegisterUser() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
+    const { dataUser } = useStore();
+
+    useEffect(() => {
+        if (dataUser) {
+            const isAdminOrStaff = dataUser.role === 'admin' || dataUser.role === 'staff' || dataUser.isAdmin;
+            if (isAdminOrStaff) {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
+        }
+    }, [dataUser, navigate]);
 
     const onFinish = async (values) => {
         setLoading(true);

@@ -12,8 +12,10 @@ import { useStore } from '../hooks/useStore';
 import { listProduct, createProduct, updateProduct, deleteProduct } from '../config/ProductRequest';
 import { listCategory, createCategory, updateCategory, deleteCategory } from '../config/CategoryRequest';
 import { requestPaymentsAdmin, requestUpdatePaymentStatus } from '../config/paymentRequest';
-import { requestUsersAdmin, requestDeleteUserAdmin, requestToggleAdmin } from '../config/UserRequest';
+import { requestUsersAdmin, requestDeleteUserAdmin, requestToggleAdmin, requestUpdateRole, requestGetStaffReport } from '../config/UserRequest';
 import { listCoupons, createCoupon, updateCoupon, deleteCoupon } from '../config/CounponRequest';
+import { listAllComplaints, respondToComplaint } from '../config/ComplaintRequest';
+import { getFlashSaleConfig, setFlashSaleConfig } from '../config/FlashSaleRequest';
 
 // Lucide & Recharts imports for premium Dashboard theme
 import { 
@@ -88,6 +90,12 @@ function AdminDashboard() {
     const [users, setUsers] = useState([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
 
+    // Staff management states
+    const [staffList, setStaffList] = useState([]);
+    const [selectedStaffId, setSelectedStaffId] = useState(null);
+    const [staffReport, setStaffReport] = useState(null);
+    const [loadingStaffReport, setLoadingStaffReport] = useState(false);
+
     // Coupons states
     const [coupons, setCoupons] = useState([]);
     const [loadingCoupons, setLoadingCoupons] = useState(false);
@@ -95,6 +103,23 @@ function AdminDashboard() {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [couponForm] = Form.useForm();
     const [submittingCoupon, setSubmittingCoupon] = useState(false);
+
+    // Inventory states
+    const [editingStockId, setEditingStockId] = useState(null);
+    const [tempStockValue, setTempStockValue] = useState(0);
+
+    // Complaints states
+    const [complaints, setComplaints] = useState([]);
+    const [loadingComplaints, setLoadingComplaints] = useState(false);
+    const [responseModalVisible, setResponseModalVisible] = useState(false);
+    const [selectedComplaint, setSelectedComplaint] = useState(null);
+    const [adminReplyText, setAdminReplyText] = useState('');
+    const [submittingReply, setSubmittingReply] = useState(false);
+
+    // Flash Sale states
+    const [flashSaleConfig, setFlashSaleConfig] = useState(null);
+    const [flashSaleForm] = Form.useForm();
+    const [submittingFlashSale, setSubmittingFlashSale] = useState(false);
 
     // Chat support states
     const [conversations, setConversations] = useState([]);
@@ -234,6 +259,39 @@ function AdminDashboard() {
         }
     };
 
+    const fetchStaffList = async () => {
+        try {
+            const res = await requestUsersAdmin();
+            const allUsers = res.metadata || [];
+            const staffOnly = allUsers.filter(u => u.role === 'staff');
+            setStaffList(staffOnly);
+            if (staffOnly.length > 0 && !selectedStaffId) {
+                setSelectedStaffId(staffOnly[0]._id);
+            }
+        } catch (error) {
+            console.error('Error fetching staff list:', error);
+            message.error('Không thể tải danh sách nhân viên');
+        }
+    };
+
+    useEffect(() => {
+        if (selectedStaffId && activeTab === 'staff-mgmt') {
+            const fetchReport = async () => {
+                setLoadingStaffReport(true);
+                try {
+                    const res = await requestGetStaffReport(selectedStaffId);
+                    setStaffReport(res.metadata);
+                } catch (error) {
+                    console.error('Error fetching staff report:', error);
+                    message.error('Không thể tải báo cáo nhân viên');
+                } finally {
+                    setLoadingStaffReport(false);
+                }
+            };
+            fetchReport();
+        }
+    }, [selectedStaffId, activeTab]);
+
     // Fetch coupons
     const fetchCoupons = async () => {
         setLoadingCoupons(true);
@@ -245,6 +303,47 @@ function AdminDashboard() {
             message.error('Không thể tải danh sách mã giảm giá');
         } finally {
             setLoadingCoupons(false);
+        }
+    };
+
+    // Fetch complaints
+    const fetchComplaints = async () => {
+        setLoadingComplaints(true);
+        try {
+            const res = await listAllComplaints();
+            setComplaints(res.metadata || []);
+        } catch (error) {
+            console.error('Error fetching complaints:', error);
+            message.error('Không thể tải danh sách khiếu nại');
+        } finally {
+            setLoadingComplaints(false);
+        }
+    };
+
+    // Fetch flash sale config
+    const fetchFlashSale = async () => {
+        try {
+            const res = await getFlashSaleConfig();
+            if (res.metadata) {
+                setFlashSaleConfig(res.metadata);
+                if (res.metadata.endTime) {
+                    // format date for datetime-local input: YYYY-MM-DDTHH:MM
+                    const date = new Date(res.metadata.endTime);
+                    const formatted = date.toISOString().slice(0, 16);
+                    flashSaleForm.setFieldsValue({
+                        title: res.metadata.title,
+                        endTime: formatted,
+                        isActive: res.metadata.isActive
+                    });
+                } else {
+                    flashSaleForm.setFieldsValue({
+                        title: res.metadata.title,
+                        isActive: res.metadata.isActive
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching flash sale config:', error);
         }
     };
 
@@ -266,11 +365,20 @@ function AdminDashboard() {
             fetchOrders();
         } else if (activeTab === 'users') {
             fetchUsers();
+        } else if (activeTab === 'staff-mgmt') {
+            fetchStaffList();
         } else if (activeTab === 'coupons') {
             fetchCoupons();
         } else if (activeTab === 'support') {
             fetchConversations();
             fetchChatStats();
+        } else if (activeTab === 'inventory') {
+            fetchProducts();
+        } else if (activeTab === 'complaints') {
+            fetchComplaints();
+        } else if (activeTab === 'flash-sale') {
+            fetchFlashSale();
+            fetchProducts();
         }
     }, [activeTab]);
 
@@ -630,7 +738,7 @@ function AdminDashboard() {
                 </div>
             )
         },
-        {
+        ...(!dataUser || dataUser.role !== 'staff' ? [{
             title: 'Hành động',
             key: 'actions',
             width: 150,
@@ -658,7 +766,7 @@ function AdminDashboard() {
                     </Popconfirm>
                 </Space>
             )
-        }
+        }] : [])
     ];
 
     // Categories Columns
@@ -798,6 +906,21 @@ function AdminDashboard() {
             )
         },
         {
+            title: 'Nhân viên xác nhận',
+            key: 'confirmedBy',
+            render: (_, record) => {
+                if (record.confirmedBy) {
+                    return (
+                        <div>
+                            <p className="font-bold text-xs text-blue-700">{record.confirmedBy.fullName}</p>
+                            <p className="text-[10px] text-gray-400">({record.confirmedBy.role})</p>
+                        </div>
+                    );
+                }
+                return <span className="text-gray-400 text-xs">Chưa có</span>;
+            }
+        },
+        {
             title: 'Ngày đặt',
             dataIndex: 'createdAt',
             key: 'createdAt',
@@ -877,16 +1000,27 @@ function AdminDashboard() {
         return data;
     };
 
+    const isStaff = dataUser?.role === 'staff';
     const menuItems = [
         { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { key: 'products', label: 'Quản lý Giày', icon: ShoppingBag },
-        { key: 'categories', label: 'Quản lý Thương hiệu', icon: FolderHeart },
+        { key: 'inventory', label: 'Quản lý kho', icon: Layers },
+        ...(!isStaff ? [
+            { key: 'categories', label: 'Quản lý Thương hiệu', icon: FolderHeart }
+        ] : []),
         { key: 'orders', label: 'Quản lý Đơn hàng', icon: ShoppingCart },
-        { key: 'users', label: 'Quản lý Khách hàng', icon: UsersIcon },
-        { key: 'coupons', label: 'Quản lý Khuyến mãi', icon: Layers },
+        ...(!isStaff ? [
+            { key: 'users', label: 'Quản lý tài khoản', icon: UsersIcon },
+            { key: 'coupons', label: 'Quản lý Khuyến mãi', icon: Layers }
+        ] : []),
         { key: 'support', label: 'Hỗ trợ khách hàng', icon: MessageSquare },
-        { key: 'revenue', label: 'Thống kê Doanh thu', icon: LineChart },
-        { key: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
+        { key: 'complaints', label: 'Quản lý khiếu nại', icon: WarningOutlined },
+        ...(!isStaff ? [
+            { key: 'revenue', label: 'Thống kê Doanh thu', icon: LineChart },
+            { key: 'staff-mgmt', label: 'Quản lý nhân viên', icon: UsersIcon },
+            { key: 'flash-sale', label: 'Cấu hình Flash Sale', icon: Clock },
+            { key: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon }
+        ] : []),
     ];
 
     const renderRevenue = () => {
@@ -1064,6 +1198,178 @@ function AdminDashboard() {
                         pagination={{ pageSize: 5 }}
                         className="border border-gray-250 rounded-xl overflow-hidden"
                     />
+                </div>
+            </div>
+        );
+    };
+
+    const renderStaffManagement = () => {
+        const selectedStaff = staffList.find(s => s._id === selectedStaffId);
+
+        return (
+            <div className="space-y-6 font-sans">
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 className="text-xl font-bold text-gray-900">Quản lý hiệu suất Nhân viên</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                        Theo dõi thống kê số lượng đơn hàng nhân viên đã xác nhận và các tin nhắn hỗ trợ đã gửi.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    {/* Left Staff list selection column */}
+                    <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col space-y-4">
+                        <span className="font-bold text-sm text-gray-800">Danh sách nhân viên ({staffList.length})</span>
+                        <div className="space-y-2 overflow-y-auto max-h-[450px]">
+                            {staffList.length === 0 ? (
+                                <p className="text-xs text-gray-400 py-6 text-center font-medium">Chưa có nhân viên nào</p>
+                            ) : (
+                                staffList.map(staff => {
+                                    const isSelected = staff._id === selectedStaffId;
+                                    return (
+                                        <div
+                                            key={staff._id}
+                                            onClick={() => setSelectedStaffId(staff._id)}
+                                            className={`p-3 rounded-xl cursor-pointer transition-all duration-200 border ${
+                                                isSelected
+                                                    ? 'bg-black text-white border-black font-semibold shadow-sm'
+                                                    : 'bg-gray-50 border-gray-150 hover:bg-gray-100 text-gray-800'
+                                            }`}
+                                        >
+                                            <p className="text-sm truncate">{staff.fullName}</p>
+                                            <p className={`text-[10px] truncate mt-0.5 ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>
+                                                {staff.email}
+                                            </p>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Staff report detail column */}
+                    <div className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-6">
+                        {selectedStaff ? (
+                            <>
+                                {/* Selected Staff Header info */}
+                                <div className="border-b border-gray-150 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                                    <div>
+                                        <h4 className="text-lg font-bold text-gray-900">{selectedStaff.fullName}</h4>
+                                        <p className="text-xs text-gray-500 mt-0.5">{selectedStaff.email}</p>
+                                    </div>
+                                    <Tag color="purple" className="font-bold border-none px-3 py-1 rounded-full text-xs">
+                                        NHÂN VIÊN HỖ TRỢ
+                                    </Tag>
+                                </div>
+
+                                {/* KPIs dashboard row */}
+                                {loadingStaffReport ? (
+                                    <div className="py-20 text-center text-gray-450 text-xs">Đang tải báo cáo hiệu suất...</div>
+                                ) : staffReport ? (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="border border-gray-150 rounded-xl p-4 bg-gray-50/50 flex flex-col justify-between">
+                                                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Đơn hàng đã xác nhận</span>
+                                                <h3 className="text-3xl font-extrabold text-gray-900 mt-2">{staffReport.confirmedOrders?.length || 0}</h3>
+                                                <p className="text-[10px] text-green-600 font-medium mt-1">✓ Đã đối chiếu thành công</p>
+                                            </div>
+                                            <div className="border border-gray-150 rounded-xl p-4 bg-gray-50/50 flex flex-col justify-between">
+                                                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Tin nhắn chat đã gửi</span>
+                                                <h3 className="text-3xl font-extrabold text-gray-900 mt-2">{staffReport.sentMessages?.length || 0}</h3>
+                                                <p className="text-[10px] text-blue-600 font-medium mt-1">💬 Đã phản hồi khách hàng</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Confirmed Orders Table */}
+                                        <div>
+                                            <h5 className="font-bold text-sm text-gray-800 mb-3">Đơn hàng đã xác nhận ({staffReport.confirmedOrders?.length || 0})</h5>
+                                            <Table
+                                                dataSource={staffReport.confirmedOrders}
+                                                rowKey="_id"
+                                                pagination={{ pageSize: 4 }}
+                                                className="border border-gray-200 rounded-xl overflow-hidden text-xs"
+                                                columns={[
+                                                    {
+                                                        title: 'Mã đơn',
+                                                        dataIndex: '_id',
+                                                        key: '_id',
+                                                        render: (id) => <span className="font-mono text-xs text-gray-800 font-semibold">{id.substring(id.length - 6)}</span>
+                                                    },
+                                                    {
+                                                        title: 'Khách hàng',
+                                                        key: 'customer',
+                                                        render: (_, rec) => (
+                                                            <div>
+                                                                <p className="font-semibold text-gray-900 text-xs">{rec.fullName || rec.userId?.fullName || 'N/A'}</p>
+                                                                <p className="text-[10px] text-gray-400">{rec.phoneNumber}</p>
+                                                            </div>
+                                                        )
+                                                    },
+                                                    {
+                                                        title: 'Trạng thái',
+                                                        dataIndex: 'status',
+                                                        key: 'status',
+                                                        render: (st) => (
+                                                            <Tag color={st === 'completed' ? 'success' : st === 'cancelled' ? 'error' : 'warning'}>
+                                                                {st === 'completed' ? 'Hoàn thành' : st === 'confirmed' ? 'Chuẩn bị' : 'Đang xử lý'}
+                                                            </Tag>
+                                                        )
+                                                    },
+                                                    {
+                                                        title: 'Tổng tiền',
+                                                        key: 'finalPrice',
+                                                        render: (_, rec) => <span className="font-bold text-gray-900">{formatPrice(rec.finalPrice || rec.totalPrice)}</span>
+                                                    }
+                                                ]}
+                                            />
+                                        </div>
+
+                                        {/* Chat Messages Timeline */}
+                                        <div>
+                                            <h5 className="font-bold text-sm text-gray-800 mb-3">Lịch sử tin nhắn hỗ trợ đã gửi ({staffReport.sentMessages?.length || 0})</h5>
+                                            <Table
+                                                dataSource={staffReport.sentMessages}
+                                                rowKey="_id"
+                                                pagination={{ pageSize: 4 }}
+                                                className="border border-gray-200 rounded-xl overflow-hidden text-xs"
+                                                columns={[
+                                                    {
+                                                        title: 'Gửi tới khách hàng',
+                                                        key: 'customer',
+                                                        render: (_, rec) => (
+                                                            <div>
+                                                                <p className="font-semibold text-gray-900 text-xs">{rec.userId?.fullName || 'Khách vãng lai'}</p>
+                                                                <p className="text-[10px] text-gray-400">{rec.userId?.email || 'N/A'}</p>
+                                                            </div>
+                                                        )
+                                                    },
+                                                    {
+                                                        title: 'Nội dung tin nhắn',
+                                                        dataIndex: 'content',
+                                                        key: 'content',
+                                                        render: (content) => <span className="text-gray-700 italic">"{content.substring(0, 50)}{content.length > 50 ? '...' : ''}"</span>
+                                                    },
+                                                    {
+                                                        title: 'Thời gian',
+                                                        dataIndex: 'createdAt',
+                                                        key: 'createdAt',
+                                                        render: (date) => new Date(date).toLocaleString('vi-VN')
+                                                    }
+                                                ]}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="py-20 text-center text-gray-400">Không có báo cáo hiệu suất khả dụng.</div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="py-20 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
+                                <UsersIcon className="w-10 h-10 opacity-30 text-gray-450" />
+                                <p className="font-bold text-gray-700">Chưa chọn nhân viên</p>
+                                <p className="text-xs">Chọn một nhân viên từ danh sách bên trái để xem chi tiết báo cáo công việc.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -1329,15 +1635,17 @@ function AdminDashboard() {
                         <h3 className="text-lg font-bold text-gray-955">Danh sách giày thể thao</h3>
                         <p className="text-xs text-gray-500">Quản lý và chỉnh sửa toàn bộ các sản phẩm giày trong kho</p>
                     </div>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        size="large"
-                        onClick={openAddProductModal}
-                        className="bg-black hover:bg-zinc-800 w-full sm:w-auto font-medium text-white flex items-center justify-center border-none"
-                    >
-                        Thêm giày mới
-                    </Button>
+                    {!isStaff && (
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            size="large"
+                            onClick={openAddProductModal}
+                            className="bg-black hover:bg-zinc-800 w-full sm:w-auto font-medium text-white flex items-center justify-center border-none"
+                        >
+                            Thêm giày mới
+                        </Button>
+                    )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -1498,11 +1806,380 @@ function AdminDashboard() {
         );
     };
 
-    const handleRoleChange = async (userId, currentIsAdmin, selectedValue) => {
-        const wantsAdmin = selectedValue === 'admin';
-        if (wantsAdmin !== currentIsAdmin) {
+    const handleUpdateStock = async (productId, currentProduct) => {
+        try {
+            const formData = new FormData();
+            formData.append('nameProduct', currentProduct.nameProduct);
+            formData.append('priceProduct', currentProduct.priceProduct);
+            formData.append('discountProduct', currentProduct.discountProduct || 0);
+            formData.append('stockProduct', tempStockValue);
+            formData.append('descriptionProduct', currentProduct.descriptionProduct);
+            formData.append('categoryProduct', currentProduct.categoryProduct?._id || currentProduct.categoryProduct);
+            formData.append('metadata', JSON.stringify(currentProduct.metadata || {}));
+            
+            const existingImages = currentProduct.imagesProduct || [];
+            formData.append('oldImagesProduct', JSON.stringify(existingImages));
+
+            await updateProduct(productId, formData);
+            message.success('Cập nhật tồn kho thành công!');
+            setEditingStockId(null);
+            fetchProducts();
+        } catch (error) {
+            console.error('Error updating stock:', error);
+            message.error('Không thể cập nhật tồn kho');
+        }
+    };
+
+    const handleComplaintReply = async () => {
+        if (!selectedComplaint) return;
+        setSubmittingReply(true);
+        try {
+            await respondToComplaint(selectedComplaint._id, {
+                adminResponse: adminReplyText,
+                status: selectedComplaint.status
+            });
+            message.success('Đã gửi phản hồi khiếu nại thành công!');
+            setResponseModalVisible(false);
+            fetchComplaints();
+        } catch (error) {
+            console.error('Error responding to complaint:', error);
+            message.error('Không thể gửi phản hồi khiếu nại');
+        } finally {
+            setSubmittingReply(false);
+        }
+    };
+
+    const handleFlashSaleSubmit = async (values) => {
+        setSubmittingFlashSale(true);
+        try {
+            await setFlashSaleConfig(values);
+            message.success('Cập nhật cấu hình Flash Sale thành công!');
+            fetchFlashSale();
+        } catch (error) {
+            console.error('Error updating flash sale config:', error);
+            message.error('Không thể cập nhật cấu hình Flash Sale');
+        } finally {
+            setSubmittingFlashSale(false);
+        }
+    };
+
+    const renderInventory = () => {
+        const columns = [
+            {
+                title: 'Hình ảnh',
+                dataIndex: 'imagesProduct',
+                key: 'imagesProduct',
+                render: (images) => (
+                    <img
+                        src={images?.[0] || 'https://via.placeholder.com/50'}
+                        alt="sneaker"
+                        className="w-10 h-10 object-cover rounded border bg-gray-50"
+                    />
+                )
+            },
+            {
+                title: 'Tên giày',
+                dataIndex: 'nameProduct',
+                key: 'nameProduct',
+                render: (text) => <span className="font-semibold text-gray-900">{text}</span>
+            },
+            {
+                title: 'Giá bán',
+                dataIndex: 'priceProduct',
+                key: 'priceProduct',
+                render: (price) => <span className="font-bold text-gray-800">{price?.toLocaleString('vi-VN')}đ</span>
+            },
+            {
+                title: 'Số lượng kho',
+                key: 'stockProduct',
+                render: (_, record) => {
+                    const isEditing = editingStockId === record._id;
+                    return isEditing ? (
+                        <div className="flex items-center gap-2">
+                            <InputNumber
+                                min={0}
+                                value={tempStockValue}
+                                onChange={(value) => setTempStockValue(value || 0)}
+                                className="w-20"
+                                size="small"
+                            />
+                            <Button
+                                type="primary"
+                                size="small"
+                                onClick={() => handleUpdateStock(record._id, record)}
+                                className="bg-green-650 hover:bg-green-700 text-white border-none rounded"
+                            >
+                                Lưu
+                            </Button>
+                            <Button
+                                size="small"
+                                onClick={() => setEditingStockId(null)}
+                                className="rounded"
+                            >
+                                Hủy
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 group">
+                            <span className="font-mono font-bold text-sm">{record.stockProduct}</span>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<EditOutlined className="text-gray-400 group-hover:text-black" />}
+                                onClick={() => {
+                                    setEditingStockId(record._id);
+                                    setTempStockValue(record.stockProduct);
+                                }}
+                            />
+                        </div>
+                    );
+                }
+            },
+            {
+                title: 'Trạng thái kho',
+                key: 'stockStatus',
+                render: (_, record) => {
+                    const stock = record.stockProduct || 0;
+                    if (stock === 0) {
+                        return <Tag color="error" className="font-semibold rounded-full border px-2.5">Hết hàng</Tag>;
+                    } else if (stock < 5) {
+                        return <Tag color="warning" className="font-semibold rounded-full border px-2.5">Sắp hết hàng</Tag>;
+                    } else {
+                        return <Tag color="success" className="font-semibold rounded-full border px-2.5">Còn hàng</Tag>;
+                    }
+                }
+            }
+        ];
+
+        return (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-955">Báo cáo tồn kho hàng hóa</h3>
+                    <p className="text-xs text-gray-500">Xem trạng thái hàng hóa và cập nhật nhanh số lượng giày thực tế</p>
+                </div>
+
+                <Table
+                    columns={columns}
+                    dataSource={products}
+                    rowKey="_id"
+                    loading={loadingProducts}
+                    pagination={{ pageSize: 8 }}
+                    scroll={{ x: 'max-content' }}
+                    className="border border-gray-200 rounded-xl overflow-hidden"
+                />
+            </div>
+        );
+    };
+
+    const renderComplaints = () => {
+        const columns = [
+            {
+                title: 'Khách hàng',
+                key: 'user',
+                render: (_, record) => {
+                    const user = record.userId || {};
+                    return (
+                        <div>
+                            <p className="font-semibold text-gray-900">{user.fullName || 'N/A'}</p>
+                            <p className="text-xs text-gray-400">{user.email || 'N/A'}</p>
+                        </div>
+                    );
+                }
+            },
+            {
+                title: 'Mã đơn hàng',
+                dataIndex: 'paymentId',
+                key: 'paymentId',
+                render: (payment) => <span className="font-mono text-xs">{payment?._id || 'N/A'}</span>
+            },
+            {
+                title: 'Lý do',
+                dataIndex: 'reason',
+                key: 'reason',
+                render: (text) => <span className="font-semibold text-red-650 text-xs">{text}</span>
+            },
+            {
+                title: 'Chi tiết khiếu nại',
+                dataIndex: 'content',
+                key: 'content',
+                render: (text) => <span className="text-xs text-gray-700 block max-w-xs truncate" title={text}>{text}</span>
+            },
+            {
+                title: 'Bằng chứng',
+                dataIndex: 'images',
+                key: 'images',
+                render: (imgs) => (
+                    <div className="flex gap-1 flex-wrap">
+                        {(imgs || []).map((img, i) => (
+                            <img
+                                key={i}
+                                src={img}
+                                alt="evidence"
+                                className="w-8 h-8 object-cover rounded border cursor-pointer hover:scale-105 transition"
+                                onClick={() => window.open(img)}
+                            />
+                        ))}
+                    </div>
+                )
+            },
+            {
+                title: 'Trạng thái',
+                dataIndex: 'status',
+                key: 'status',
+                render: (status) => {
+                    const colors = {
+                        pending: 'orange',
+                        processing: 'blue',
+                        resolved: 'green',
+                        rejected: 'red'
+                    };
+                    const texts = {
+                        pending: 'Chờ xử lý',
+                        processing: 'Đang xử lý',
+                        resolved: 'Đã giải quyết',
+                        rejected: 'Từ chối'
+                    };
+                    return <Tag color={colors[status] || 'default'} className="font-bold text-xs">{texts[status] || status}</Tag>;
+                }
+            },
+            {
+                title: 'Hành động',
+                key: 'actions',
+                render: (_, record) => (
+                    <Button
+                        type="primary"
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => {
+                            setSelectedComplaint(record);
+                            setAdminReplyText(record.adminResponse || '');
+                            setResponseModalVisible(true);
+                        }}
+                        className="bg-black hover:bg-zinc-800 text-white font-medium flex items-center justify-center border-none rounded-lg"
+                    >
+                        Xem & Xử lý
+                    </Button>
+                )
+            }
+        ];
+
+        return (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-955">Hộp thư khiếu nại của khách hàng</h3>
+                    <p className="text-xs text-gray-500">Quản lý và giải quyết các khiếu nại sản phẩm bị lỗi hoặc sai kích thước</p>
+                </div>
+
+                <Table
+                    columns={columns}
+                    dataSource={complaints}
+                    rowKey="_id"
+                    loading={loadingComplaints}
+                    pagination={{ pageSize: 6 }}
+                    scroll={{ x: 'max-content' }}
+                    className="border border-gray-200 rounded-xl overflow-hidden"
+                />
+            </div>
+        );
+    };
+
+    const renderFlashSale = () => {
+        const discountedProducts = products.filter(p => p.discountProduct > 0);
+
+        return (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-955">Cấu hình sự kiện Flash Sale</h3>
+                    <p className="text-xs text-gray-500">Thiết lập thời gian đếm ngược và theo dõi các sản phẩm đang được giảm giá</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-1 bg-gray-50 border border-gray-200 p-6 rounded-2xl space-y-4">
+                        <h4 className="font-bold text-gray-900 border-b pb-2">Cài đặt chiến dịch</h4>
+                        <Form
+                            form={flashSaleForm}
+                            layout="vertical"
+                            onFinish={handleFlashSaleSubmit}
+                            className="space-y-4"
+                        >
+                            <Form.Item
+                                label="Tiêu đề chiến dịch"
+                                name="title"
+                                rules={[{ required: true, message: 'Vui lòng nhập tiêu đề chiến dịch' }]}
+                            >
+                                <Input placeholder="Ví dụ: FLASH SALE KHỦNG BẤT NGỜ" className="rounded-xl py-2" />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Thời gian kết thúc (Đếm ngược)"
+                                name="endTime"
+                                rules={[{ required: true, message: 'Vui lòng chọn thời gian kết thúc' }]}
+                            >
+                                <Input type="datetime-local" className="rounded-xl py-2" />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Kích hoạt chiến dịch"
+                                name="isActive"
+                                rules={[{ required: true }]}
+                            >
+                                <Select className="light-select rounded-xl" style={{ height: 40 }}>
+                                    <Option value={true}>🟢 Đang hoạt động (Kích hoạt)</Option>
+                                    <Option value={false}>🔴 Tạm dừng chiến dịch</Option>
+                                </Select>
+                            </Form.Item>
+
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                loading={submittingFlashSale}
+                                className="w-full bg-black hover:bg-zinc-800 text-white font-bold py-5 flex items-center justify-center border-none rounded-xl mt-4"
+                            >
+                                Lưu cấu hình chiến dịch
+                            </Button>
+                        </Form>
+                    </div>
+
+                    <div className="lg:col-span-2 space-y-4 border border-gray-200 rounded-2xl p-6 bg-white">
+                        <h4 className="font-bold text-gray-900 border-b pb-2 flex justify-between items-center">
+                            <span>Sản phẩm đang được giảm giá ({discountedProducts.length})</span>
+                            <span className="text-xs text-gray-500 font-normal">Sửa chi tiết tại tab Quản lý Giày</span>
+                        </h4>
+
+                        <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto pr-2">
+                            {discountedProducts.map(p => (
+                                <div key={p._id} className="flex gap-4 py-3 items-center">
+                                    <img
+                                        src={p.imagesProduct?.[0] || 'https://via.placeholder.com/60'}
+                                        alt={p.nameProduct}
+                                        className="w-12 h-12 object-cover rounded border"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm text-gray-900 truncate">{p.nameProduct}</p>
+                                        <p className="text-xs text-gray-400">Giảm giá: <span className="font-bold text-red-500">-{p.discountProduct}%</span></p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-gray-400 line-through">{(p.priceProduct || 0).toLocaleString('vi-VN')}đ</p>
+                                        <p className="text-sm font-bold text-gray-900">{Math.round(p.priceProduct * (1 - p.discountProduct/100)).toLocaleString('vi-VN')}đ</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {discountedProducts.length === 0 && (
+                                <div className="py-12 text-center text-gray-400 text-xs">
+                                    Không có sản phẩm nào được thiết lập giảm giá. Vui lòng thiết lập giảm giá &gt; 0% cho sản phẩm trong tab Quản lý Giày.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const handleRoleChange = async (userId, currentRole, selectedRole) => {
+        if (selectedRole !== currentRole) {
             try {
-                await requestToggleAdmin(userId);
+                await requestUpdateRole(userId, selectedRole);
                 message.success('Cập nhật vai trò tài khoản thành công');
                 fetchUsers();
             } catch (error) {
@@ -1537,17 +2214,21 @@ function AdminDashboard() {
         },
         {
             title: 'Vai trò (Chọn để đổi)',
-            key: 'isAdmin',
-            render: (_, record) => (
-                <Select
-                    value={record.isAdmin ? 'admin' : 'user'}
-                    onChange={(value) => handleRoleChange(record._id, record.isAdmin, value)}
-                    style={{ width: 140 }}
-                >
-                    <Option value="user">Khách hàng</Option>
-                    <Option value="admin">Admin</Option>
-                </Select>
-            )
+            key: 'role',
+            render: (_, record) => {
+                const currentRole = record.role || (record.isAdmin ? 'admin' : 'user');
+                return (
+                    <Select
+                        value={currentRole}
+                        onChange={(value) => handleRoleChange(record._id, currentRole, value)}
+                        style={{ width: 140 }}
+                    >
+                        <Option value="user">Khách hàng</Option>
+                        <Option value="staff">Nhân viên</Option>
+                        <Option value="admin">Admin</Option>
+                    </Select>
+                );
+            }
         },
         {
             title: 'Ngày tạo',
@@ -1576,8 +2257,8 @@ function AdminDashboard() {
         return (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
                 <div>
-                    <h3 className="text-lg font-bold text-gray-955">Danh sách tài khoản khách hàng</h3>
-                    <p className="text-xs text-gray-500">Quản lý và cấp quyền truy cập admin cho các tài khoản đăng ký</p>
+                    <h3 className="text-lg font-bold text-gray-955">Danh sách tài khoản</h3>
+                    <p className="text-xs text-gray-500">Quản lý phân quyền và cập nhật vai trò cho các tài khoản thành viên</p>
                 </div>
 
                 <Table
@@ -2334,7 +3015,11 @@ function AdminDashboard() {
                     {activeTab === 'coupons' && renderCoupons()}
                     {activeTab === 'support' && renderSupport()}
                     {activeTab === 'revenue' && renderRevenue()}
+                    {activeTab === 'staff-mgmt' && renderStaffManagement()}
                     {activeTab === 'settings' && renderSettings()}
+                    {activeTab === 'inventory' && renderInventory()}
+                    {activeTab === 'complaints' && renderComplaints()}
+                    {activeTab === 'flash-sale' && renderFlashSale()}
                 </main>
             </div>
 
@@ -2721,6 +3406,84 @@ function AdminDashboard() {
                         </Space>
                     </Form.Item>
                 </Form>
+            </Modal>
+
+            {/* Complaint Response Modal */}
+            <Modal
+                title={<span className="font-bold text-lg text-gray-900">Chi tiết & Phản hồi khiếu nại</span>}
+                open={responseModalVisible}
+                onCancel={() => setResponseModalVisible(false)}
+                footer={null}
+                width={500}
+                destroyOnClose
+            >
+                {selectedComplaint && (
+                    <div className="space-y-5 mt-4">
+                        <div className="bg-gray-50 border p-4 rounded-xl text-sm space-y-2">
+                            <p><strong>Khách hàng:</strong> {selectedComplaint.userId?.fullName} ({selectedComplaint.userId?.email})</p>
+                            <p><strong>Mã đơn hàng:</strong> <span className="font-mono text-xs">{selectedComplaint.paymentId?._id}</span></p>
+                            <p><strong>Lý do:</strong> <span className="text-red-600 font-semibold">{selectedComplaint.reason}</span></p>
+                            <p><strong>Nội dung:</strong> {selectedComplaint.content}</p>
+                            {selectedComplaint.images && selectedComplaint.images.length > 0 && (
+                                <div>
+                                    <p><strong>Bằng chứng:</strong></p>
+                                    <div className="flex gap-2 flex-wrap mt-1">
+                                        {selectedComplaint.images.map((img, i) => (
+                                            <img
+                                                key={i}
+                                                src={img}
+                                                alt="evidence"
+                                                className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-90"
+                                                onClick={() => window.open(img)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Quyết định xử lý:</label>
+                            <Select
+                                value={selectedComplaint.status}
+                                onChange={(value) => setSelectedComplaint({ ...selectedComplaint, status: value })}
+                                style={{ width: '100%' }}
+                                className="light-select"
+                            >
+                                <Option value="pending">Chờ xử lý</Option>
+                                <Option value="processing">Đang xử lý</Option>
+                                <Option value="resolved">🟢 Đã giải quyết (Chấp nhận khiếu nại)</Option>
+                                <Option value="rejected">🔴 Từ chối khiếu nại</Option>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Lời nhắn phản hồi đến khách hàng:</label>
+                            <Input.TextArea
+                                rows={4}
+                                placeholder="Nhập lời phản hồi, hướng giải quyết gửi đến khách hàng..."
+                                value={adminReplyText}
+                                onChange={(e) => setAdminReplyText(e.target.value)}
+                                className="rounded-xl"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2 border-t pt-4">
+                            <Button onClick={() => setResponseModalVisible(false)} size="large">
+                                Đóng
+                            </Button>
+                            <Button
+                                type="primary"
+                                onClick={handleComplaintReply}
+                                loading={submittingReply}
+                                size="large"
+                                className="bg-black hover:bg-zinc-800 text-white font-bold border-none rounded-xl"
+                            >
+                                Gửi phản hồi
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

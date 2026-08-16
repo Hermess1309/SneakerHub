@@ -276,7 +276,8 @@ class PaymentController {
             .find({})
             .populate('userId', 'fullName email')
             .populate('products.productId', '')
-            .populate('couponId');
+            .populate('couponId')
+            .populate('confirmedBy', 'fullName email role');
         return new OK({
             message: 'Lấy danh sách đơn hàng thành công',
             metadata: dataPayment,
@@ -297,6 +298,9 @@ class PaymentController {
 
         const oldStatus = findPayment.status;
         findPayment.status = status;
+        if (status === 'confirmed' && oldStatus !== 'confirmed') {
+            findPayment.confirmedBy = req.user;
+        }
         await findPayment.save();
 
         if (status === 'cancelled' && oldStatus !== 'cancelled') {

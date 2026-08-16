@@ -20,5 +20,7 @@ router.put('/change-password', authUser, asyncHandler(usersController.changePass
 router.get('/admin/list', authAdmin, asyncHandler(usersController.getAllUsers));
 router.delete('/admin/delete/:id', authAdmin, asyncHandler(usersController.deleteUser));
 router.put('/admin/toggle-admin/:id', authAdmin, asyncHandler(usersController.toggleAdmin));
+router.put('/admin/update-role/:id', authAdmin, asyncHandler(usersController.updateRole));
+router.get('/admin/staff-report/:staffId', authAdmin, asyncHandler(usersController.getStaffReport));
 
 module.exports = router;

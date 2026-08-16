@@ -8,6 +8,7 @@ const userModel = new Schema(
         email: { type: String, require: true },
         password: { type: String, require: true },
         isAdmin: { type: Boolean, default: false },
+        role: { type: String, enum: ['admin', 'staff', 'user'], default: 'user' },
         chatStatus: { type: String, enum: ['waiting', 'chatting', 'closed'], default: 'closed' },
     },
     {

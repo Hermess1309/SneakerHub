@@ -24,6 +24,7 @@ const paymentModel = new Schema(
             default: 'pending',
         },
         paymentMethod: { type: String, enum: ['cod', 'momo', 'vnpay'], require: true },
+        confirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     },
     {
         timestamps: true,
