@@ -1852,9 +1852,9 @@ function AdminDashboard() {
         try {
             await requestCloseChat(userId);
             message.success('Đã đóng cuộc trò chuyện');
+            setSelectedUserId(null); // Clear selected user panel
             fetchConversations();
             fetchChatStats();
-            fetchMessagesForUser(userId, true);
         } catch (error) {
             message.error('Không thể đóng cuộc trò chuyện');
         }
@@ -1867,8 +1867,11 @@ function AdminDashboard() {
         }
     }, [chatMessages, activeTab, selectedUserId]);
 
-    // Conversations search filtering
+    // Conversations search filtering (exposes only active/waiting tickets, hiding closed ones)
     const filteredConversations = conversations.filter(conv => {
+        const status = conv.userInfo?.chatStatus || 'closed';
+        if (status === 'closed') return false; // Filter out closed chats
+
         const name = (conv.userInfo?.fullName || '').toLowerCase();
         const email = (conv.userInfo?.email || '').toLowerCase();
         const query = searchQuery.toLowerCase();
@@ -2091,7 +2094,7 @@ function AdminDashboard() {
                                             // Admin message: styled yellow banner text bubble to match screenshot
                                             return (
                                                 <div key={msg._id} className="flex flex-col items-start w-full">
-                                                    <div className="bg-[#fffbeb] border border-[#fde68a] text-yellow-950 p-4 rounded-xl text-sm leading-relaxed max-w-[85%] self-start flex flex-col shadow-sm">
+                                                    <div className="bg-[#fffbeb] border border-[#fde68a] text-yellow-950 p-4 rounded-xl text-sm leading-relaxed max-w-[85%] w-fit self-start flex flex-col shadow-sm">
                                                         <span className="font-extrabold text-[10px] text-amber-700 uppercase tracking-wider mb-1 block">
                                                             SNEAKERHUB AI
                                                         </span>
@@ -2119,7 +2122,7 @@ function AdminDashboard() {
                                                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                         </div>
-                                                        <div className="bg-white border border-gray-200 text-gray-800 px-3.5 py-2.5 rounded-2xl rounded-tl-none text-sm shadow-sm mt-1 max-w-[75%]">
+                                                        <div className="bg-white border border-gray-200 text-gray-800 px-3.5 py-2.5 rounded-2xl rounded-tl-none text-sm shadow-sm mt-1 max-w-[75%] w-fit">
                                                             {msg.content}
                                                         </div>
                                                     </div>

@@ -326,7 +326,7 @@ function ChatWidget() {
                                     // User message in AI mode: Navy pill layout matching screenshot
                                     return (
                                         <div key={msg._id} className="flex flex-col items-end w-full">
-                                            <div className="bg-[#1e3a8a] text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-sm shadow-sm">
+                                            <div className="bg-[#1e3a8a] text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-sm shadow-sm w-fit max-w-[75%]">
                                                 {msg.content}
                                             </div>
                                             <span className="text-[9px] text-gray-400 mt-1 mr-1">Đã gửi</span>
@@ -366,7 +366,7 @@ function ChatWidget() {
                                         // User bubble (Navy blue matching AI mode)
                                         return (
                                             <div key={msg._id} className="flex flex-col items-end w-full">
-                                                <div className="bg-[#1e3a8a] text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-sm shadow-sm">
+                                                <div className="bg-[#1e3a8a] text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-sm shadow-sm w-fit max-w-[75%]">
                                                     {msg.content}
                                                 </div>
                                                 <span className="text-[9px] text-gray-400 mt-1 mr-1">
