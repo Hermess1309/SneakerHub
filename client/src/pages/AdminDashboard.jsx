@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Tabs, Table, Button, Input, Select, Modal, Upload, Popconfirm, Form,
     InputNumber, Tag, message, Descriptions, Divider, Space, Popover, Badge
@@ -19,8 +19,9 @@ import { listCoupons, createCoupon, updateCoupon, deleteCoupon } from '../config
 import { 
     LayoutDashboard, ShoppingBag, FolderHeart, ShoppingCart, Users as UsersIcon,
     Settings as SettingsIcon, Bell, LogOut, Search as SearchIcon,
-    DollarSign, Layers, LineChart
+    DollarSign, Layers, LineChart, MessageSquare
 } from 'lucide-react';
+import { requestGetConversations, requestGetMessages, requestSendMessage } from '../config/MessageRequest';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell
@@ -91,6 +92,14 @@ function AdminDashboard() {
     const [editingCoupon, setEditingCoupon] = useState(null);
     const [couponForm] = Form.useForm();
     const [submittingCoupon, setSubmittingCoupon] = useState(false);
+
+    // Chat support states
+    const [conversations, setConversations] = useState([]);
+    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [replyText, setReplyText] = useState('');
+    const [loadingConversations, setLoadingConversations] = useState(false);
+    const [loadingChatMessages, setLoadingChatMessages] = useState(false);
 
     // Fetch products
     const fetchProducts = async () => {
@@ -254,6 +263,8 @@ function AdminDashboard() {
             fetchUsers();
         } else if (activeTab === 'coupons') {
             fetchCoupons();
+        } else if (activeTab === 'support') {
+            fetchConversations();
         }
     }, [activeTab]);
 
@@ -867,6 +878,7 @@ function AdminDashboard() {
         { key: 'orders', label: 'Quản lý Đơn hàng', icon: ShoppingCart },
         { key: 'users', label: 'Quản lý Khách hàng', icon: UsersIcon },
         { key: 'coupons', label: 'Quản lý Khuyến mãi', icon: Layers },
+        { key: 'support', label: 'Hỗ trợ khách hàng', icon: MessageSquare },
         { key: 'revenue', label: 'Thống kê Doanh thu', icon: LineChart },
         { key: 'settings', label: 'Cấu hình hệ thống', icon: SettingsIcon },
     ];
@@ -1728,6 +1740,220 @@ function AdminDashboard() {
         );
     };
 
+    // Fetch conversations
+    const fetchConversations = async () => {
+        try {
+            const res = await requestGetConversations();
+            setConversations(res.metadata || []);
+        } catch (error) {
+            console.error('Error fetching conversations:', error);
+        }
+    };
+
+    // Fetch messages for a specific user
+    const fetchMessagesForUser = async (userId, silent = false) => {
+        if (!userId) return;
+        if (!silent) setLoadingChatMessages(true);
+        try {
+            const res = await requestGetMessages(userId);
+            setChatMessages(res.metadata || []);
+        } catch (error) {
+            console.error('Error fetching chat messages for user:', error);
+        } finally {
+            if (!silent) setLoadingChatMessages(false);
+        }
+    };
+
+    // Polling effect for Support Tab
+    useEffect(() => {
+        if (activeTab !== 'support') return;
+
+        fetchConversations();
+        const convTimer = setInterval(() => {
+            fetchConversations();
+        }, 4000);
+
+        return () => clearInterval(convTimer);
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (activeTab !== 'support' || !selectedUserId) return;
+
+        fetchMessagesForUser(selectedUserId);
+        const msgTimer = setInterval(() => {
+            fetchMessagesForUser(selectedUserId, true);
+        }, 3000);
+
+        return () => clearInterval(msgTimer);
+    }, [activeTab, selectedUserId]);
+
+    // Handle sending message
+    const handleSendReply = async (e) => {
+        if (e) e.preventDefault();
+        if (!replyText.trim() || !selectedUserId) return;
+
+        const text = replyText;
+        setReplyText('');
+
+        // Optimistic update
+        const tempMsg = {
+            _id: `temp-${Date.now()}`,
+            userId: selectedUserId,
+            senderId: dataUser?._id || 'admin',
+            content: text,
+            createdAt: new Date().toISOString()
+        };
+        setChatMessages(prev => [...prev, tempMsg]);
+
+        try {
+            await requestSendMessage(text, selectedUserId);
+            fetchMessagesForUser(selectedUserId, true);
+            fetchConversations(); // refresh last message
+        } catch (error) {
+            message.error('Không thể gửi phản hồi');
+        }
+    };
+
+    const adminChatEndRef = useRef(null);
+    useEffect(() => {
+        if (activeTab === 'support' && selectedUserId) {
+            adminChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [chatMessages, activeTab, selectedUserId]);
+
+    const renderSupport = () => {
+        const activeConv = conversations.find(c => c._id === selectedUserId);
+        
+        return (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex h-[600px] gap-6 font-sans">
+                {/* Conversations List */}
+                <div className="w-1/3 border-r border-gray-150 pr-4 flex flex-col h-full">
+                    <div className="pb-3 border-b border-gray-200 shrink-0">
+                        <h4 className="font-bold text-gray-900">Cuộc hội thoại</h4>
+                        <p className="text-xs text-gray-500">Khách hàng cần bạn hỗ trợ trực tuyến</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto mt-4 space-y-2">
+                        {conversations.length === 0 ? (
+                            <div className="text-center py-12 text-gray-400 text-sm">
+                                Chưa có khách hàng nào nhắn tin.
+                            </div>
+                        ) : (
+                            conversations.map(conv => {
+                                const isSelected = conv._id === selectedUserId;
+                                const hasUnread = conv.unreadCount > 0;
+                                const displayName = conv.userInfo ? (conv.userInfo.fullName || conv.userInfo.email) : 'Khách vãng lai';
+                                const isGuest = !conv.userInfo || conv.userInfo.email.includes('guest_');
+                                
+                                return (
+                                    <div
+                                        key={conv._id}
+                                        onClick={() => setSelectedUserId(conv._id)}
+                                        className={`p-3.5 rounded-xl cursor-pointer transition-all duration-200 flex justify-between items-start ${
+                                            isSelected 
+                                                ? 'bg-black text-white' 
+                                                : 'hover:bg-gray-100 bg-gray-50 border border-gray-100'
+                                        }`}
+                                    >
+                                        <div className="w-[80%]">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="font-bold text-sm truncate block">{displayName}</span>
+                                                {isGuest && (
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${isSelected ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                                                        Guest
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className={`text-xs truncate mt-1 ${isSelected ? 'text-gray-300' : 'text-gray-500'}`}>
+                                                {conv.lastMessage}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1.5">
+                                            <span className="text-[10px] text-gray-400">
+                                                {new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            {hasUnread && !isSelected && (
+                                                <span className="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+
+                {/* Chat Window */}
+                <div className="flex-1 flex flex-col h-full">
+                    {selectedUserId ? (
+                        <>
+                            {/* Chat Header */}
+                            <div className="pb-3 border-b border-gray-250 flex justify-between items-center shrink-0">
+                                <div>
+                                    <h4 className="font-bold text-gray-900">
+                                        {activeConv?.userInfo?.fullName || 'Khách vãng lai'}
+                                    </h4>
+                                    <p className="text-xs text-gray-500">{activeConv?.userInfo?.email}</p>
+                                </div>
+                            </div>
+
+                            {/* Chat Messages */}
+                            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 rounded-xl my-4 space-y-3">
+                                {chatMessages.map(msg => {
+                                    const isFromAdmin = msg.senderId !== msg.userId && msg.senderId === dataUser?._id;
+                                    
+                                    return (
+                                        <div
+                                            key={msg._id}
+                                            className={`flex flex-col ${isFromAdmin ? 'items-end' : 'items-start'}`}
+                                        >
+                                            <div
+                                                className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm shadow-sm ${
+                                                    isFromAdmin
+                                                        ? 'bg-black text-white rounded-tr-none'
+                                                        : 'bg-white text-gray-800 border border-gray-250 rounded-tl-none'
+                                                }`}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                            <span className="text-[10px] text-gray-400 mt-1 px-1">
+                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                                <div ref={adminChatEndRef} />
+                            </div>
+
+                            {/* Chat Input */}
+                            <form onSubmit={handleSendReply} className="flex gap-2 items-center shrink-0">
+                                <Input
+                                    placeholder="Gửi tin nhắn phản hồi..."
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    className="rounded-xl focus:border-black focus:shadow-none"
+                                    onPressEnter={handleSendReply}
+                                />
+                                <Button
+                                    type="primary"
+                                    onClick={handleSendReply}
+                                    className="bg-black hover:bg-gray-800 border-none text-white rounded-xl"
+                                >
+                                    Phản hồi
+                                </Button>
+                            </form>
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-400 p-6 space-y-2">
+                            <LayoutDashboard className="text-5xl opacity-40" />
+                            <p className="font-bold text-gray-700">Chưa chọn cuộc hội thoại</p>
+                            <p className="text-xs">Nhấp vào một cuộc hội thoại ở danh sách bên trái để bắt đầu chat tư vấn khách hàng.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="bg-gray-50 text-gray-900 min-h-screen flex font-sans">
             {/* Sidebar */}
@@ -1880,6 +2106,7 @@ function AdminDashboard() {
                     {activeTab === 'orders' && renderOrders()}
                     {activeTab === 'users' && renderUsers()}
                     {activeTab === 'coupons' && renderCoupons()}
+                    {activeTab === 'support' && renderSupport()}
                     {activeTab === 'revenue' && renderRevenue()}
                     {activeTab === 'settings' && renderSettings()}
                 </main>

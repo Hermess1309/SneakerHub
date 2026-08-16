@@ -5,6 +5,7 @@ const cartRoutes = require('./cart.routes');
 const couponRoutes = require('./coupon.routes');
 const paymentRoutes = require('./payment.routes');
 const feedbackRoutes = require('./feedback.routes');
+const messageRoutes = require('./message.routes');
 
 function routes(app) {
     app.use('/api/user', usersRoutes);
@@ -14,6 +15,7 @@ function routes(app) {
     app.use('/api/coupon', couponRoutes);
     app.use('/api/payment', paymentRoutes);
     app.use('/api/feedback', feedbackRoutes);
+    app.use('/api/message', messageRoutes);
 }
 
 module.exports = routes;
