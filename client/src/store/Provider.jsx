@@ -22,10 +22,23 @@ export function Provider({ children }) {
     };
 
     useEffect(() => {
+        let isMounted = true;
         if (logged) {
-            fetchAuth();
+            requestAuth()
+                .then((res) => {
+                    if (isMounted) setDataUser(res.metadata);
+                })
+                .catch(() => {});
         }
-        getCart();
+        requestGetCart()
+            .then((res) => {
+                if (isMounted) setCart(res.metadata);
+            })
+            .catch(() => {});
+
+        return () => {
+            isMounted = false;
+        };
     }, [logged]);
 
     return <Context.Provider value={{ dataUser, cart, getCart, fetchAuth }}>{children}</Context.Provider>;

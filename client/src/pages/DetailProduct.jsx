@@ -72,7 +72,7 @@ function DetailProduct() {
         setZoomState(prev => ({ ...prev, showZoom: false }));
     };
 
-    const { dataUser, getCart, cart } = useStore();
+    const { getCart, cart } = useStore();
 
     // Fetch product detail and related products
     const fetchProductData = async () => {
@@ -218,8 +218,9 @@ function DetailProduct() {
             const data = {
                 productId: id,
                 quantity,
+                size: selectedSize || '',
             };
-            const res = await requestAddToCart(data);
+            await requestAddToCart(data);
             await getCart();
             if (showSuccess) {
                 setShowAddSuccessModal(true);
@@ -252,7 +253,7 @@ function DetailProduct() {
 
     const getProductColor = () => {
         if (!product) return 'Nhiều màu';
-        const match = product.nameProduct.match(/[‘'“"\[]([^’'”"\]]+)[’'”"\]]/);
+        const match = product.nameProduct.match(/[‘'“"[]([^’'”"\]]+)[’'”"\]]/);
         if (match && match[1]) {
             return match[1];
         }

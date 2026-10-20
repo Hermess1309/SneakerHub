@@ -29,3 +29,20 @@ export const deleteCategory = async (id) => {
     const res = await request.delete(`${apiCategory}/delete/${id}`);
     return res.data;
 };
+
+export const uploadCategoryImage = async (file, onProgress) => {
+    const formData = new FormData();
+    formData.append('imageCategory', file);
+    const res = await request.post(`${apiCategory}/upload-image`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (event) => {
+            if (onProgress && event.total) {
+                onProgress({ percent: Math.round((event.loaded / event.total) * 100) });
+            }
+        },
+    });
+    return res.data;
+};
+

@@ -89,8 +89,8 @@ class MessageController {
         }).send(res);
     };
 
-    // 3. Get unique conversations list (Admin only)
-    getConversations = async (req, res) => {
+    // Helper to get formatted conversations with guest support
+    fetchFormattedConversations = async () => {
         const conversations = await Message.aggregate([
             { $sort: { createdAt: 1 } },
             {
@@ -142,9 +142,37 @@ class MessageController {
             }
         ]);
 
+        return conversations.map(c => {
+            if (!c.userInfo) {
+                let guestStatus = 'waiting';
+                const lastMsg = c.lastMessage || '';
+                if (lastMsg.includes('Cuộc trò chuyện đã được đóng')) {
+                    guestStatus = 'closed';
+                } else if (lastMsg.includes('chấp nhận yêu cầu và tham gia hỗ trợ')) {
+                    guestStatus = 'chatting';
+                }
+
+                return {
+                    ...c,
+                    userInfo: {
+                        fullName: `Khách vãng lai (#${String(c._id).slice(-4)})`,
+                        email: 'Khách chưa đăng nhập',
+                        isAdmin: false,
+                        chatStatus: guestStatus
+                    }
+                };
+            }
+            return c;
+        });
+    };
+
+    // 3. Get unique conversations list (Admin only)
+    getConversations = async (req, res) => {
+        const formatted = await this.fetchFormattedConversations();
+
         new OK({
             message: 'Get conversations successfully',
-            metadata: conversations
+            metadata: formatted
         }).send(res);
     };
 
@@ -192,11 +220,11 @@ class MessageController {
 
     // 6. Get chat stats (Admin only)
     getChatStats = async (req, res) => {
-        const activeUserIdsResult = await Message.distinct('userId');
+        const conversations = await this.fetchFormattedConversations();
         
-        const waitingCount = await User.countDocuments({ _id: { $in: activeUserIdsResult }, chatStatus: 'waiting' });
-        const chattingCount = await User.countDocuments({ _id: { $in: activeUserIdsResult }, chatStatus: 'chatting' });
-        const closedCount = await User.countDocuments({ _id: { $in: activeUserIdsResult }, chatStatus: 'closed' });
+        const waitingCount = conversations.filter(c => (c.userInfo?.chatStatus || 'waiting') === 'waiting').length;
+        const chattingCount = conversations.filter(c => c.userInfo?.chatStatus === 'chatting').length;
+        const closedCount = conversations.filter(c => c.userInfo?.chatStatus === 'closed').length;
 
         new OK({
             message: 'Get chat stats successfully',

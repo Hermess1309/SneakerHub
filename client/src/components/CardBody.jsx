@@ -3,18 +3,17 @@ import { HeartOutlined, HeartFilled } from '@ant-design/icons';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
-import { requestAddToCart } from '../config/CartRequest';
 
 function CardBody({ dataItem, index = 0 }) {
     const [imageError, setImageError] = useState(false);
     const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
-    const { getCart, dataUser } = useStore();
+    const { dataUser } = useStore();
 
     // Favorites LocalStorage Helpers
     const getFavorites = () => {
         try {
             return JSON.parse(localStorage.getItem('wishlist') || '[]');
-        } catch (e) {
+        } catch {
             return [];
         }
     };
@@ -59,22 +58,6 @@ function CardBody({ dataItem, index = 0 }) {
         })
             .format(price)
             .replace('₫', 'đ'); // Format with lowercase 'đ'
-    };
-
-    const handleAddToCart = async (e) => {
-        e.preventDefault();
-        e.stopPropagation(); // Stop navigation to detail page
-        try {
-            const data = {
-                productId: dataItem._id,
-                quantity: 1,
-            };
-            const res = await requestAddToCart(data);
-            await getCart();
-            message.success(res.message);
-        } catch (error) {
-            message.error(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
-        }
     };
 
     return (

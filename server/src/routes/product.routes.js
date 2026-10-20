@@ -1,25 +1,15 @@
 const express = require('express');
 const router = express.Router();
 
-const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'src/uploads/products');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    },
-});
-
-const upload = multer({ storage: storage });
+const createUpload = require('../middleware/uploadMiddleware');
+const upload = createUpload('products');
 
 const { asyncHandler } = require('../auth/checkAuth');
 const { authAdmin } = require('../middleware/authUser');
 
 const productController = require('../controllers/product.controller');
 
+router.post('/upload-image', authAdmin, upload.single('image'), asyncHandler(productController.uploadSingleImage));
 router.post('/create', authAdmin, upload.array('imagesProduct', 100), asyncHandler(productController.createProduct));
 router.get('/list', asyncHandler(productController.getAllProduct));
 router.put('/update/:id', authAdmin, upload.array('imagesProduct', 100), asyncHandler(productController.updateProduct));

@@ -25,7 +25,7 @@ function LoginUser() {
     const onFinish = async (values) => {
         setLoading(true);
         try {
-            const res = await requestLogin(values);
+            await requestLogin(values);
             
             // Check user role immediately
             const authRes = await requestAuth();

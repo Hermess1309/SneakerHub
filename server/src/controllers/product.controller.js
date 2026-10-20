@@ -2,15 +2,65 @@ const cloudinary = require('../config/cloudDinary');
 const { Created, OK } = require('../core/success.response');
 const { NotFoundError, BadRequestError } = require('../core/error.response');
 const fs = require('fs/promises');
+const mongoose = require('mongoose');
 
 const getPublicId = require('../utils/getPublicId');
 
 const productModel = require('../models/product.model');
 const feedbackModel = require('../models/feedback.model');
+const categoryModel = require('../models/category.model');
+
+const CLOUDINARY_FOLDER = 'sneakerhub';
+
+const cleanupFiles = async (files) => {
+    if (!files || !Array.isArray(files)) return;
+    for (const file of files) {
+        if (file && file.path) {
+            await fs.unlink(file.path).catch(() => {});
+        }
+    }
+};
+
+const rollbackCloudinaryUploads = async (publicIds) => {
+    if (!publicIds || !Array.isArray(publicIds)) return;
+    for (const pid of publicIds) {
+        if (pid) {
+            await cloudinary.uploader.destroy(pid).catch(() => {});
+        }
+    }
+};
 
 class ProductController {
+    async uploadSingleImage(req, res) {
+        const file = req.file;
+        if (!file) {
+            throw new BadRequestError('Vui lòng chọn tệp hình ảnh để tải lên');
+        }
+
+        try {
+            const uploadResult = await cloudinary.uploader.upload(file.path, {
+                folder: CLOUDINARY_FOLDER,
+                resource_type: 'image',
+            });
+            await fs.unlink(file.path).catch(() => {});
+            const secureUrl = uploadResult.secure_url || uploadResult.url;
+            return new OK({
+                message: 'Tải ảnh lên Cloudinary thành công',
+                metadata: {
+                    url: secureUrl,
+                    public_id: uploadResult.public_id,
+                },
+            }).send(res);
+        } catch (err) {
+            if (file && file.path) {
+                await fs.unlink(file.path).catch(() => {});
+            }
+            throw new BadRequestError(`Tải ảnh lên Cloudinary thất bại: ${err.message}`);
+        }
+    }
+
     async createProduct(req, res) {
-        const dataImages = req.files;
+        const dataImages = req.files || [];
         const {
             nameProduct,
             priceProduct,
@@ -22,60 +72,136 @@ class ProductController {
             imagesProduct: bodyImagesProduct,
         } = req.body;
 
-        let imagesProduct = [];
+        // 1. Text & Structural Validation (Fail fast before uploading images)
+        if (!nameProduct || typeof nameProduct !== 'string' || !nameProduct.trim()) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Vui lòng nhập tên sản phẩm');
+        }
 
+        const trimmedName = nameProduct.trim();
+
+        // Check duplicate name
+        const existing = await productModel.findOne({ nameProduct: trimmedName });
+        if (existing) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Sản phẩm với tên này đã tồn tại');
+        }
+
+        // Validate Price
+        if (priceProduct === undefined || priceProduct === null || priceProduct === '') {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Vui lòng nhập đơn giá sản phẩm');
+        }
+        const numPrice = Number(priceProduct);
+        if (isNaN(numPrice) || numPrice < 0) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Đơn giá không hợp lệ (phải là số >= 0)');
+        }
+
+        // Validate Stock
+        if (stockProduct === undefined || stockProduct === null || stockProduct === '') {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Vui lòng nhập số lượng tồn kho');
+        }
+        const numStock = Number(stockProduct);
+        if (isNaN(numStock) || numStock < 0) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Số lượng tồn kho không hợp lệ (phải là số >= 0)');
+        }
+
+        // Validate Discount
+        const numDiscount = Number(discountProduct || 0);
+        if (isNaN(numDiscount) || numDiscount < 0 || numDiscount > 100) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Khuyến mãi phải từ 0% đến 100%');
+        }
+
+        // Validate Description
+        if (!descriptionProduct || typeof descriptionProduct !== 'string' || !descriptionProduct.trim()) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Vui lòng nhập mô tả sản phẩm');
+        }
+
+        // Validate Category
+        if (!categoryProduct || !mongoose.Types.ObjectId.isValid(categoryProduct)) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Danh mục/thương hiệu không hợp lệ');
+        }
+        const foundCategory = await categoryModel.findById(categoryProduct);
+        if (!foundCategory) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Danh mục/thương hiệu không tồn tại');
+        }
+
+        // Parse manual URLs if provided
+        let manualUrls = [];
         if (bodyImagesProduct) {
-            imagesProduct = Array.isArray(bodyImagesProduct)
-                ? bodyImagesProduct
-                : (typeof bodyImagesProduct === 'string' ? JSON.parse(bodyImagesProduct) : []);
-        } else if (dataImages && dataImages.length > 0) {
-            for (const image of dataImages) {
-                const { path, filename } = image;
-                let url = '';
-                try {
-                    if (process.env.CLOUD_DINARY_KEY && process.env.CLOUD_DINARY_KEY !== 'your_cloudinary_key') {
-                        const uploadResult = await cloudinary.uploader.upload(path, {
-                            folder: 'products',
-                            resource_type: 'image',
-                        });
-                        url = uploadResult.url;
-                        await fs.unlink(path);
-                    }
-                } catch (err) {
-                    console.warn("Cloudinary upload failed, falling back to local static serve:", err);
+            try {
+                const parsed = Array.isArray(bodyImagesProduct)
+                    ? bodyImagesProduct
+                    : (typeof bodyImagesProduct === 'string' ? JSON.parse(bodyImagesProduct) : []);
+                manualUrls = (Array.isArray(parsed) ? parsed : [parsed])
+                    .filter(u => typeof u === 'string' && u.trim().startsWith('http'));
+            } catch {
+                if (typeof bodyImagesProduct === 'string') {
+                    manualUrls = bodyImagesProduct.split(',').map(s => s.trim()).filter(u => u.startsWith('http'));
                 }
-                if (!url) {
-                    url = `http://localhost:3000/uploads/products/${filename}`;
-                }
-                imagesProduct.push(url);
             }
         }
 
-        if (
-            !nameProduct ||
-            !priceProduct ||
-            !discountProduct ||
-            !stockProduct ||
-            !descriptionProduct ||
-            !categoryProduct ||
-            imagesProduct.length === 0 ||
-            !metadata
-        ) {
-            throw new BadRequestError('Thiếu thông tin sản phẩm');
+        if (dataImages.length === 0 && manualUrls.length === 0) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Vui lòng cung cấp ít nhất một hình ảnh sản phẩm');
         }
 
-        const parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+        // 2. Cloudinary Upload Process
+        const uploadedPublicIds = [];
+        const uploadedUrls = [];
 
-        const newProduct = await productModel.create({
-            nameProduct,
-            priceProduct,
-            discountProduct,
-            stockProduct,
-            descriptionProduct,
-            categoryProduct,
-            metadata: parsedMetadata,
-            imagesProduct,
-        });
+        try {
+            for (const image of dataImages) {
+                const uploadResult = await cloudinary.uploader.upload(image.path, {
+                    folder: CLOUDINARY_FOLDER,
+                    resource_type: 'image',
+                });
+                uploadedPublicIds.push(uploadResult.public_id);
+                const secureUrl = uploadResult.secure_url || uploadResult.url;
+                uploadedUrls.push(secureUrl);
+                await fs.unlink(image.path).catch(() => {});
+            }
+        } catch (uploadErr) {
+            // Clean up any remaining temp files on disk
+            await cleanupFiles(dataImages);
+            // Roll back any assets uploaded in this batch to Cloudinary
+            await rollbackCloudinaryUploads(uploadedPublicIds);
+            throw new BadRequestError(`Tải ảnh lên Cloudinary thất bại: ${uploadErr.message}`);
+        }
+
+        const finalImages = [...uploadedUrls, ...manualUrls];
+        if (finalImages.length === 0) {
+            await rollbackCloudinaryUploads(uploadedPublicIds);
+            throw new BadRequestError('Không có ảnh hợp lệ để lưu sản phẩm');
+        }
+
+        // 3. Database Insertion with Rollback on DB Error
+        let newProduct;
+        try {
+            const parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : (metadata || {});
+            newProduct = await productModel.create({
+                nameProduct: trimmedName,
+                priceProduct: numPrice,
+                discountProduct: numDiscount,
+                stockProduct: numStock,
+                descriptionProduct: descriptionProduct.trim(),
+                categoryProduct,
+                metadata: parsedMetadata,
+                imagesProduct: finalImages,
+            });
+        } catch (dbErr) {
+            // Roll back Cloudinary assets if DB creation fails
+            await rollbackCloudinaryUploads(uploadedPublicIds);
+            throw dbErr;
+        }
 
         return new Created({
             message: 'Tạo sản phẩm thành công',
@@ -104,68 +230,111 @@ class ProductController {
             oldImagesProduct,
         } = req.body;
 
-        const dataImages = req.files;
+        const dataImages = req.files || [];
 
-        if (
-            !id ||
-            !nameProduct ||
-            !priceProduct ||
-            !discountProduct ||
-            !stockProduct ||
-            !descriptionProduct ||
-            !categoryProduct ||
-            !metadata ||
-            !oldImagesProduct
-        ) {
-            throw new BadRequestError('Thiếu thông tin sản phẩm');
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('ID sản phẩm không hợp lệ');
         }
 
         const findProduct = await productModel.findById(id);
         if (!findProduct) {
+            await cleanupFiles(dataImages);
             throw new NotFoundError('Sản phẩm không tồn tại');
         }
 
-        let imagesProduct = [];
-
-        if (dataImages && dataImages.length > 0) {
-            for (const image of dataImages) {
-                const { path, filename } = image;
-                let url = '';
-                try {
-                    if (process.env.CLOUD_DINARY_KEY && process.env.CLOUD_DINARY_KEY !== 'your_cloudinary_key') {
-                        const uploadResult = await cloudinary.uploader.upload(path, {
-                            folder: 'products',
-                            resource_type: 'image',
-                        });
-                        url = uploadResult.url;
-                        await fs.unlink(path);
-                    }
-                } catch (err) {
-                    console.warn("Cloudinary upload failed, falling back to local static serve:", err);
-                }
-                if (!url) {
-                    url = `http://localhost:3000/uploads/products/${filename}`;
-                }
-                imagesProduct.push(url);
+        // Validate name if provided
+        let trimmedName = findProduct.nameProduct;
+        if (nameProduct) {
+            trimmedName = nameProduct.trim();
+            const existingWithSameName = await productModel.findOne({
+                nameProduct: trimmedName,
+                _id: { $ne: id }
+            });
+            if (existingWithSameName) {
+                await cleanupFiles(dataImages);
+                throw new BadRequestError('Tên sản phẩm đã được sử dụng bởi sản phẩm khác');
             }
         }
 
-        const parserOldImages = oldImagesProduct ? JSON.parse(oldImagesProduct) : [];
+        // Validate numbers
+        const numPrice = priceProduct !== undefined && priceProduct !== '' ? Number(priceProduct) : findProduct.priceProduct;
+        if (isNaN(numPrice) || numPrice < 0) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Đơn giá không hợp lệ (phải là số >= 0)');
+        }
 
-        const finalImages = [...parserOldImages, ...imagesProduct];
+        const numStock = stockProduct !== undefined && stockProduct !== '' ? Number(stockProduct) : findProduct.stockProduct;
+        if (isNaN(numStock) || numStock < 0) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Số lượng tồn kho không hợp lệ (phải là số >= 0)');
+        }
 
-        const parserMetadata = metadata ? JSON.parse(metadata) : undefined;
+        const numDiscount = discountProduct !== undefined && discountProduct !== '' ? Number(discountProduct) : findProduct.discountProduct;
+        if (isNaN(numDiscount) || numDiscount < 0 || numDiscount > 100) {
+            await cleanupFiles(dataImages);
+            throw new BadRequestError('Khuyến mãi phải từ 0% đến 100%');
+        }
+
+        // Parse existing old images
+        let parsedOldImages = [];
+        if (oldImagesProduct) {
+            try {
+                parsedOldImages = typeof oldImagesProduct === 'string' ? JSON.parse(oldImagesProduct) : oldImagesProduct;
+                if (!Array.isArray(parsedOldImages)) parsedOldImages = [parsedOldImages];
+            } catch {
+                parsedOldImages = [];
+            }
+        } else {
+            parsedOldImages = findProduct.imagesProduct || [];
+        }
+
+        // Upload new images to Cloudinary folder sneakerhub
+        const uploadedPublicIds = [];
+        const uploadedUrls = [];
+
+        try {
+            for (const image of dataImages) {
+                const uploadResult = await cloudinary.uploader.upload(image.path, {
+                    folder: CLOUDINARY_FOLDER,
+                    resource_type: 'image',
+                });
+                uploadedPublicIds.push(uploadResult.public_id);
+                const secureUrl = uploadResult.secure_url || uploadResult.url;
+                uploadedUrls.push(secureUrl);
+                await fs.unlink(image.path).catch(() => {});
+            }
+        } catch (uploadErr) {
+            await cleanupFiles(dataImages);
+            await rollbackCloudinaryUploads(uploadedPublicIds);
+            throw new BadRequestError(`Tải ảnh lên Cloudinary thất bại: ${uploadErr.message}`);
+        }
+
+        const finalImages = [...parsedOldImages, ...uploadedUrls];
+        if (finalImages.length === 0) {
+            await rollbackCloudinaryUploads(uploadedPublicIds);
+            throw new BadRequestError('Sản phẩm phải có ít nhất một hình ảnh');
+        }
+
+        let parsedMetadata = findProduct.metadata;
+        if (metadata) {
+            try {
+                parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+            } catch {
+                parsedMetadata = metadata;
+            }
+        }
 
         const updateProduct = await productModel.findByIdAndUpdate(
             id,
             {
-                nameProduct,
-                priceProduct,
-                discountProduct,
-                stockProduct,
-                descriptionProduct,
-                categoryProduct,
-                metadata: parserMetadata,
+                nameProduct: trimmedName,
+                priceProduct: numPrice,
+                discountProduct: numDiscount,
+                stockProduct: numStock,
+                descriptionProduct: descriptionProduct ? descriptionProduct.trim() : findProduct.descriptionProduct,
+                categoryProduct: categoryProduct || findProduct.categoryProduct,
+                metadata: parsedMetadata,
                 imagesProduct: finalImages,
             },
             { new: true },

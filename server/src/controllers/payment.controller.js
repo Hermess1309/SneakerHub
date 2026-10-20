@@ -5,6 +5,7 @@ const couponModel = require('../models/coupon.model');
 const { NotFoundError, BadRequestError } = require('../core/error.response');
 const { Created, OK } = require('../core/success.response');
 
+const vnpayService = require('../services/vnpay.service');
 const { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } = require('vnpay');
 
 const crypto = require('crypto');
@@ -80,27 +81,13 @@ class PaymentController {
                 metadata: newPayment,
             }).send(res);
         } else if (typePayment === 'vnpay') {
-            const vnpay = new VNPay({
-                tmnCode: '64DFOLZV',
-                secureSecret: 'O6J4Z89F24EL7WDPFXJEJBX47AGBLQVO',
-                vnpayHost: 'https://sandbox.vnpayment.vn',
-                testMode: true, // tùy chọn
-                hashAlgorithm: 'SHA512', // tùy chọn
-                loggerFn: ignoreLogger, // tùy chọn
-            });
-
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const vnpayResponse = vnpay.buildPaymentUrl({
-                vnp_Amount: Number(findCartUser.couponId ? findCartUser.finalPrice : findCartUser.totalPrice),
-                vnp_IpAddr: '127.0.0.1', //
-                vnp_TxnRef: `${findCartUser.userId} + ${generatePayID()}`,
-                vnp_OrderInfo: `Thanh toan don hang ${findCartUser.userId}`,
-                vnp_OrderType: ProductCode.Other,
-                vnp_ReturnUrl: `http://localhost:3000/api/payment/vnpay-callback`,
-                vnp_Locale: VnpLocale.VN,
-                vnp_CreateDate: dateFormat(new Date()),
-                vnp_ExpireDate: dateFormat(tomorrow),
+            const clientIp = vnpayService.getClientIp(req);
+            const amount = Math.round(Number(findCartUser.couponId ? findCartUser.finalPrice : findCartUser.totalPrice));
+            const vnpayResponse = vnpayService.createPaymentUrl({
+                amount: amount,
+                txnRef: `${findCartUser.userId}_${generatePayID()}`,
+                orderInfo: `Thanh toan don hang ${findCartUser.userId}`,
+                ipAddr: clientIp,
             });
 
             return new Created({
@@ -108,14 +95,14 @@ class PaymentController {
                 metadata: vnpayResponse,
             }).send(res);
         } else if (typePayment === 'momo') {
-            const accessKey = 'F8BBA842ECF85';
-            const secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
-            const partnerCode = 'MOMO';
+            const accessKey = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECF85';
+            const secretKey = process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz';
+            const partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMO';
             const orderId = partnerCode + new Date().getTime();
             const requestId = orderId;
             const orderInfo = `Thanh toan don hang ${findCartUser.userId}`;
-            const redirectUrl = 'http://localhost:3000/api/payment/momo-callback';
-            const ipnUrl = 'http://localhost:3000/api/payment/momo-callback';
+            const redirectUrl = process.env.MOMO_RETURN_URL || 'http://localhost:3000/api/payment/momo-callback';
+            const ipnUrl = process.env.MOMO_RETURN_URL || 'http://localhost:3000/api/payment/momo-callback';
             const requestType = 'payWithMethod';
             const amount = Number(findCartUser.couponId ? findCartUser.finalPrice : findCartUser.totalPrice);
             const extraData = '';
@@ -163,7 +150,7 @@ class PaymentController {
             });
 
             const options = {
-                hostname: 'test-payment.momo.vn',
+                hostname: process.env.MOMO_HOST || 'test-payment.momo.vn',
                 port: 443,
                 path: '/v2/gateway/api/create',
                 method: 'POST',
@@ -197,17 +184,30 @@ class PaymentController {
     }
 
     async vnpayCallback(req, res) {
-        const { vnp_ResponseCode, vnp_OrderInfo } = req.query;
+        const verifyResult = vnpayService.verifyReturnUrl(req.query);
 
-        if (vnp_ResponseCode !== '00') {
-            throw new BadRequestError('Thanh toán thất bại');
+        // 1. Kiểm tra chữ ký số bảo mật (HMAC-SHA512)
+        if (!verifyResult.isVerified) {
+            console.error('VNPay callback failed: Invalid checksum signature', req.query);
+            throw new BadRequestError('Chữ ký bảo mật không hợp lệ (Sai checksum)');
         }
 
-        const userId = vnp_OrderInfo.split(' ')[4];
+        // 2. Kiểm tra mã phản hồi (ResponseCode: 00 là thành công)
+        if (!verifyResult.isSuccess) {
+            console.warn('VNPay payment failed or canceled:', verifyResult.message);
+            return res.redirect(`${process.env.CLIENT_URL}/checkout?error=vnpay_failed&code=${verifyResult.vnpResponseCode}`);
+        }
+
+        const txnRef = req.query.vnp_TxnRef || '';
+        const vnp_OrderInfo = req.query.vnp_OrderInfo || '';
+        const userId = txnRef.includes('_')
+            ? txnRef.split('_')[0]
+            : (vnp_OrderInfo.includes('+') ? vnp_OrderInfo.split('+')[4] : vnp_OrderInfo.split(' ')[4]);
         const findCartUser = await cartModel.findOne({ userId });
         if (!findCartUser) {
             throw new NotFoundError('Giỏ hàng không tồn tại');
         }
+
         const newPayment = await paymentModel.create({
             userId,
             products: findCartUser.products,
@@ -219,7 +219,7 @@ class PaymentController {
             finalPrice: findCartUser.finalPrice,
             couponId: findCartUser.couponId,
             paymentMethod: 'vnpay',
-            status: 'pending',
+            status: 'confirmed', // Đã thanh toán VNPay thành công -> tự động chuyển sang 'Đang chuẩn bị'
         });
 
         await findCartUser.deleteOne();
@@ -229,7 +229,9 @@ class PaymentController {
         });
 
         await decreaseProductStock(findCartUser.products);
-        await couponModel.findByIdAndUpdate(findCartUser.couponId, { $inc: { quantity: -1 } });
+        if (findCartUser.couponId) {
+            await couponModel.findByIdAndUpdate(findCartUser.couponId, { $inc: { quantity: -1 } });
+        }
 
         return res.redirect(`${process.env.CLIENT_URL}/payment-success/${newPayment._id}`);
     }
@@ -256,7 +258,7 @@ class PaymentController {
             finalPrice: findCartUser.finalPrice,
             couponId: findCartUser.couponId,
             paymentMethod: 'momo',
-            status: 'pending',
+            status: 'confirmed', // Đã thanh toán MoMo thành công -> tự động chuyển sang 'Đang chuẩn bị'
         });
 
         await findCartUser.deleteOne();
@@ -274,6 +276,7 @@ class PaymentController {
     async getPaymentsAdmin(req, res) {
         const dataPayment = await paymentModel
             .find({})
+            .sort({ createdAt: -1 })
             .populate('userId', 'fullName email')
             .populate('products.productId', '')
             .populate('couponId')

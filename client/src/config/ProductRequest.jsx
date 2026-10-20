@@ -39,3 +39,20 @@ export const deleteProduct = async (id) => {
     const res = await request.delete(`${apiProduct}/delete/${id}`);
     return res.data;
 };
+
+export const uploadProductImage = async (file, onProgress) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await request.post(`${apiProduct}/upload-image`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (event) => {
+            if (onProgress && event.total) {
+                onProgress({ percent: Math.round((event.loaded / event.total) * 100) });
+            }
+        },
+    });
+    return res.data;
+};
+

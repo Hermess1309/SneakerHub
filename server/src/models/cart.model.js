@@ -9,13 +9,14 @@ const cartModel = new Schema(
             {
                 productId: { type: mongoose.Schema.Types.ObjectId, ref: 'products' },
                 quantity: { type: Number, default: 1 },
+                size: { type: String, default: '' },
             },
         ],
         totalPrice: { type: Number, default: 0 }, // 100.000đ
-        fullName: { type: String, require: true },
-        phoneNumber: { type: String, require: true },
-        address: { type: String, require: true },
-        email: { type: String, require: true },
+        fullName: { type: String, default: '' },
+        phoneNumber: { type: String, default: '' },
+        address: { type: String, default: '' },
+        email: { type: String, default: '' },
         finalPrice: { type: Number, default: 0 }, // 90.000đ
         couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'coupon' },
     },

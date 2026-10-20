@@ -41,7 +41,7 @@ function Header() {
         const loadWishlist = () => {
             try {
                 setWishlistItems(JSON.parse(localStorage.getItem('wishlist') || '[]'));
-            } catch (e) {
+            } catch {
                 setWishlistItems([]);
             }
         };

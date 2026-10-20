@@ -39,7 +39,7 @@ function OrderHistory() {
         try {
             const list = JSON.parse(localStorage.getItem('reviewed_orders') || '[]');
             return list.some(item => item.orderId === orderId && item.productId === productId);
-        } catch (e) {
+        } catch {
             return false;
         }
     };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useStore } from '../hooks/useStore';
@@ -14,35 +14,11 @@ function CartUser() {
     const [couponInput, setCouponInput] = useState('');
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const cartData = cart?.cart;
-        const coupons = cart?.coupons || [];
-        if (cartData && cartData.couponId) {
-            const matched = coupons.find(c => c._id === cartData.couponId);
-            if (matched) {
-                setSelectedCoupon(matched);
-            } else if (!selectedCoupon) {
-                const discountAmount = cartData.totalPrice - cartData.finalPrice;
-                const discountPercent = cartData.totalPrice > 0 ? Math.round((discountAmount / cartData.totalPrice) * 100) : 0;
-                if (discountPercent > 0) {
-                    setSelectedCoupon({
-                        _id: cartData.couponId,
-                        nameCoupon: 'ĐÃ ÁP DỤNG',
-                        discount: discountPercent,
-                        minPrice: 0
-                    });
-                }
-            }
-        } else {
-            setSelectedCoupon(null);
-        }
-    }, [cart?.cart?.couponId, cart?.coupons]);
-
     // Favorites LocalStorage Helpers
     const getFavorites = () => {
         try {
             return JSON.parse(localStorage.getItem('wishlist') || '[]');
-        } catch (e) {
+        } catch {
             return [];
         }
     };
@@ -68,14 +44,14 @@ function CartUser() {
         setRemovingIds(prev => [...prev]); // Force render update
     };
 
-    const handleImmediateDelete = async (productId, itemId) => {
+    const handleImmediateDelete = async (productId, itemId, size) => {
         setRemovingIds(prev => [...prev, itemId]);
         setTimeout(async () => {
             try {
-                await requestDeleteProductCart(productId);
+                await requestDeleteProductCart(productId, { params: { size } });
                 await getCart();
                 setRemovingIds(prev => prev.filter(id => id !== itemId));
-            } catch (error) {
+            } catch {
                 message.error('Không thể xóa sản phẩm');
                 setRemovingIds(prev => prev.filter(id => id !== itemId));
             }
@@ -115,10 +91,28 @@ function CartUser() {
 
     const totalPrice = products.reduce((sum, product) => sum + calculateSubtotal(product), 0);
 
+    const activeCoupon = selectedCoupon || (() => {
+        if (cartData && cartData.couponId) {
+            const matched = coupons.find(c => c._id === cartData.couponId);
+            if (matched) return matched;
+            const discountAmount = (cartData.totalPrice || 0) - (cartData.finalPrice || 0);
+            const discountPercent = cartData.totalPrice > 0 ? Math.round((discountAmount / cartData.totalPrice) * 100) : 0;
+            if (discountPercent > 0) {
+                return {
+                    _id: cartData.couponId,
+                    nameCoupon: 'ĐÃ ÁP DỤNG',
+                    discount: discountPercent,
+                    minPrice: 0
+                };
+            }
+        }
+        return null;
+    })();
+
     const calculateDiscount = () => {
-        if (!selectedCoupon) return 0;
-        if (totalPrice < selectedCoupon.minPrice) return 0;
-        return totalPrice * (selectedCoupon.discount / 100);
+        if (!activeCoupon) return 0;
+        if (totalPrice < activeCoupon.minPrice) return 0;
+        return totalPrice * (activeCoupon.discount / 100);
     };
 
     const discount = calculateDiscount();
@@ -129,17 +123,18 @@ function CartUser() {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
 
-    const handleQuantityChange = async (productId, change) => {
+    const handleQuantityChange = async (productId, change, size) => {
         try {
             const data = {
                 productId,
                 newQuantity: change,
+                size,
             };
             const res = await requestUpdateQuantity(data);
             await getCart();
             message.success(res.message);
         } catch (error) {
-            message.error(error.response.data.message);
+            message.error(error.response?.data?.message || 'Không thể cập nhật số lượng');
         }
     };
 
@@ -245,13 +240,18 @@ function CartUser() {
                                                 {product.descriptionProduct}
                                             </p>
 
-                                            {product.metadata && (
-                                                <div className="text-xs text-gray-500 mb-2">
-                                                    <p>
+                                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                {item.size && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                        Size: {item.size}
+                                                    </span>
+                                                )}
+                                                {product.metadata?.author && (
+                                                    <span className="text-xs text-gray-500">
                                                         {product.metadata.author} • {product.metadata.publisher}
-                                                    </p>
-                                                </div>
-                                            )}
+                                                    </span>
+                                                )}
+                                            </div>
 
                                             <div className="flex items-center gap-2 mb-3">
                                                 {product.discountProduct > 0 && (
@@ -274,7 +274,7 @@ function CartUser() {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() =>
-                                                            handleQuantityChange(item.productId._id, item.quantity - 1)
+                                                            handleQuantityChange(item.productId._id, item.quantity - 1, item.size)
                                                         }
                                                         className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 transition"
                                                         disabled={item.quantity <= 1}
@@ -286,7 +286,7 @@ function CartUser() {
                                                     </span>
                                                     <button
                                                         onClick={() =>
-                                                            handleQuantityChange(item.productId._id, item.quantity + 1)
+                                                            handleQuantityChange(item.productId._id, item.quantity + 1, item.size)
                                                         }
                                                         className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 transition"
                                                         disabled={item.quantity >= product.stockProduct}
@@ -306,7 +306,7 @@ function CartUser() {
 
                                         <div className="flex flex-col items-center justify-between h-24 pl-2 self-start flex-shrink-0">
                                             <button
-                                                onClick={() => handleImmediateDelete(item.productId._id, item._id)}
+                                                onClick={() => handleImmediateDelete(item.productId._id, item._id, item.size)}
                                                 className="text-gray-400 hover:text-red-600 transition cursor-pointer border-none bg-transparent p-1"
                                                 title="Xoá khỏi giỏ hàng"
                                             >
@@ -341,11 +341,11 @@ function CartUser() {
                                     </h3>
 
                                     {/* Selected Coupon Panel */}
-                                    {selectedCoupon && (
+                                    {activeCoupon && (
                                         <div className="mb-3.5 p-3 bg-green-50 border border-green-200 rounded-xl flex justify-between items-center transition-all duration-300">
                                             <div>
                                                 <p className="text-[10px] text-green-700 font-bold uppercase tracking-wider">Đã áp dụng mã</p>
-                                                <p className="text-sm font-extrabold text-green-800">{selectedCoupon.nameCoupon} (-{selectedCoupon.discount}%)</p>
+                                                <p className="text-sm font-extrabold text-green-800">{activeCoupon.nameCoupon} (-{activeCoupon.discount}%)</p>
                                             </div>
                                             <button
                                                 onClick={async () => {
@@ -383,7 +383,7 @@ function CartUser() {
                                     <div className="space-y-2 max-h-48 overflow-y-auto pr-1 scrollbar-custom">
                                         {coupons.map((coupon) => {
                                             const isValid = totalPrice >= coupon.minPrice;
-                                            const isSelected = selectedCoupon?._id === coupon._id;
+                                            const isSelected = activeCoupon?._id === coupon._id;
 
                                             return (
                                                 <button
@@ -422,9 +422,9 @@ function CartUser() {
                                         <span className="font-semibold">{formatPrice(totalPrice)}</span>
                                     </div>
 
-                                    {selectedCoupon && (
+                                    {activeCoupon && (
                                         <div className="flex justify-between text-green-600">
-                                            <span>Giảm giá ({selectedCoupon.nameCoupon})</span>
+                                            <span>Giảm giá ({activeCoupon.nameCoupon})</span>
                                             <span className="font-semibold">-{formatPrice(discount)}</span>
                                         </div>
                                     )}

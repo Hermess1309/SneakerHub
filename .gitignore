@@ -22,8 +22,16 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+backups/
+migration-cache.json
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Superpowers and Agents (unrelated to core thesis code)
+skills/
+docs/
+AUDIT_FIX_PLAN.md
+IMAGE_STORAGE_AUDIT.md

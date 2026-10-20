@@ -5,11 +5,9 @@ import { useStore } from '../hooks/useStore';
 import { Form, Input, Button, Card, Divider, message, Spin } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, KeyOutlined } from '@ant-design/icons';
 import { requestUpdateProfile, requestChangePassword } from '../config/UserRequest';
-import { useNavigate } from 'react-router-dom';
 
 function Profile() {
     const { dataUser, fetchAuth } = useStore();
-    const navigate = useNavigate();
     const [updatingProfile, setUpdatingProfile] = useState(false);
     const [updatingPassword, setUpdatingPassword] = useState(false);
     const [profileForm] = Form.useForm();

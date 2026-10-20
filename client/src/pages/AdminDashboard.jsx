@@ -9,13 +9,13 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
-import { listProduct, createProduct, updateProduct, deleteProduct } from '../config/ProductRequest';
-import { listCategory, createCategory, updateCategory, deleteCategory } from '../config/CategoryRequest';
+import { listProduct, createProduct, updateProduct, deleteProduct, uploadProductImage } from '../config/ProductRequest';
+import { listCategory, createCategory, updateCategory, deleteCategory, uploadCategoryImage } from '../config/CategoryRequest';
 import { requestPaymentsAdmin, requestUpdatePaymentStatus } from '../config/paymentRequest';
-import { requestUsersAdmin, requestDeleteUserAdmin, requestToggleAdmin, requestUpdateRole, requestGetStaffReport } from '../config/UserRequest';
+import { requestUsersAdmin, requestDeleteUserAdmin, requestUpdateRole, requestGetStaffReport } from '../config/UserRequest';
 import { listCoupons, createCoupon, updateCoupon, deleteCoupon } from '../config/CounponRequest';
 import { listAllComplaints, respondToComplaint } from '../config/ComplaintRequest';
-import { getFlashSaleConfig, setFlashSaleConfig } from '../config/FlashSaleRequest';
+import { getFlashSaleConfig, setFlashSaleConfig as requestSetFlashSaleConfig } from '../config/FlashSaleRequest';
 
 // Lucide & Recharts imports for premium Dashboard theme
 import { 
@@ -117,7 +117,6 @@ function AdminDashboard() {
     const [submittingReply, setSubmittingReply] = useState(false);
 
     // Flash Sale states
-    const [flashSaleConfig, setFlashSaleConfig] = useState(null);
     const [flashSaleForm] = Form.useForm();
     const [submittingFlashSale, setSubmittingFlashSale] = useState(false);
 
@@ -126,8 +125,6 @@ function AdminDashboard() {
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
     const [replyText, setReplyText] = useState('');
-    const [loadingConversations, setLoadingConversations] = useState(false);
-    const [loadingChatMessages, setLoadingChatMessages] = useState(false);
     const [chatStats, setChatStats] = useState({ waiting: 0, chatting: 0, closed: 0 });
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -325,7 +322,6 @@ function AdminDashboard() {
         try {
             const res = await getFlashSaleConfig();
             if (res.metadata) {
-                setFlashSaleConfig(res.metadata);
                 if (res.metadata.endTime) {
                     // format date for datetime-local input: YYYY-MM-DDTHH:MM
                     const date = new Date(res.metadata.endTime);
@@ -434,9 +430,9 @@ function AdminDashboard() {
     };
 
     const handleBeforeUploadProduct = (file) => {
-        const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-        if (!isJpgOrPng) {
-            message.error('Chỉ được tải lên ảnh định dạng JPG hoặc PNG!');
+        const isAllowedType = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/gif';
+        if (!isAllowedType) {
+            message.error('Chỉ được tải lên ảnh định dạng JPG, PNG, WEBP hoặc GIF!');
             return Upload.LIST_IGNORE;
         }
         const isLt5M = file.size / 1024 / 1024 < 5;
@@ -444,7 +440,19 @@ function AdminDashboard() {
             message.error('Dung lượng ảnh phải nhỏ hơn 5MB!');
             return Upload.LIST_IGNORE;
         }
-        return false; // Prevent automatic upload
+        return true;
+    };
+
+    const handleCustomUploadProduct = async ({ file, onSuccess, onError, onProgress }) => {
+        try {
+            const res = await uploadProductImage(file, onProgress);
+            const uploadedUrl = res.metadata?.url;
+            onSuccess({ url: uploadedUrl }, file);
+            message.success('Đã tự động tải ảnh lên Cloudinary thành công!');
+        } catch (err) {
+            onError(err);
+            message.error(err.response?.data?.message || 'Tải ảnh lên Cloudinary thất bại!');
+        }
     };
 
     const handleProductUploadChange = ({ fileList: newFileList }) => {
@@ -452,18 +460,33 @@ function AdminDashboard() {
             message.warning('Tối đa chỉ được tải lên 5 hình ảnh!');
             setProductFileList(newFileList.slice(0, 5));
         } else {
-            setProductFileList(newFileList);
+            const updated = newFileList.map(f => {
+                if (f.response && f.response.url) {
+                    return { ...f, url: f.response.url };
+                }
+                return f;
+            });
+            setProductFileList(updated);
         }
     };
 
     const handleProductSubmit = async (values) => {
+        if (submittingProduct) return;
+
+        // Check if any file is still uploading
+        const isStillUploading = productFileList.some(f => f.status === 'uploading');
+        if (isStillUploading) {
+            message.warning('Ảnh đang được tự động tải lên Cloudinary, vui lòng chờ trong giây lát!');
+            return;
+        }
+
         setSubmittingProduct(true);
         try {
             const formData = new FormData();
             formData.append('nameProduct', values.nameProduct);
             formData.append('priceProduct', values.priceProduct);
-            formData.append('discountProduct', values.discountProduct || 0);
-            formData.append('stockProduct', values.stockProduct || 0);
+            formData.append('discountProduct', values.discountProduct !== undefined ? values.discountProduct : 0);
+            formData.append('stockProduct', values.stockProduct !== undefined ? values.stockProduct : 0);
             formData.append('descriptionProduct', values.descriptionProduct);
             formData.append('categoryProduct', values.categoryProduct);
             
@@ -483,31 +506,33 @@ function AdminDashboard() {
                 ? values.imageUrlsProduct.split(',').map(url => url.trim()).filter(Boolean)
                 : [];
 
-            // Separate existing images and new files
-            const existingImages = [];
+            // Extract successfully uploaded Cloudinary URLs & existing URLs
+            const uploadedUrls = [];
             productFileList.forEach(file => {
-                if (file.originFileObj) {
+                const url = file.response?.url || file.url;
+                if (url) {
+                    uploadedUrls.push(url);
+                } else if (file.originFileObj) {
+                    // Fallback for raw files
                     formData.append('imagesProduct', file.originFileObj);
-                } else if (file.url) {
-                    existingImages.push(file.url);
                 }
             });
 
-            // Merge manual URL entries with existing images
-            const finalExistingImages = [...new Set([...existingImages, ...manualUrls])];
+            // Merge all image URLs
+            const allImageUrls = [...new Set([...uploadedUrls, ...manualUrls])];
 
             if (editingProduct) {
-                formData.append('oldImagesProduct', JSON.stringify(finalExistingImages));
+                formData.append('oldImagesProduct', JSON.stringify(allImageUrls));
                 await updateProduct(editingProduct._id, formData);
                 message.success('Cập nhật sản phẩm thành công!');
             } else {
-                if (productFileList.filter(f => f.originFileObj).length === 0 && manualUrls.length === 0) {
-                    message.error('Vui lòng tải lên ảnh hoặc dán URL ảnh sản phẩm!');
+                if (allImageUrls.length === 0 && !formData.has('imagesProduct')) {
+                    message.error('Vui lòng chọn ảnh hoặc dán URL ảnh sản phẩm!');
                     setSubmittingProduct(false);
                     return;
                 }
-                if (manualUrls.length > 0) {
-                    formData.append('imagesProduct', JSON.stringify([...new Set(manualUrls)]));
+                if (allImageUrls.length > 0) {
+                    formData.append('imagesProduct', JSON.stringify(allImageUrls));
                 }
                 await createProduct(formData);
                 message.success('Thêm sản phẩm thành công!');
@@ -566,9 +591,9 @@ function AdminDashboard() {
     };
 
     const handleBeforeUploadCategory = (file) => {
-        const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-        if (!isJpgOrPng) {
-            message.error('Chỉ được tải lên ảnh định dạng JPG hoặc PNG!');
+        const isAllowed = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/svg+xml';
+        if (!isAllowed) {
+            message.error('Chỉ được tải lên ảnh định dạng JPG, PNG, WEBP hoặc SVG!');
             return Upload.LIST_IGNORE;
         }
         const isLt5M = file.size / 1024 / 1024 < 5;
@@ -576,44 +601,70 @@ function AdminDashboard() {
             message.error('Dung lượng ảnh phải nhỏ hơn 5MB!');
             return Upload.LIST_IGNORE;
         }
-        return false; // Prevent automatic upload
+        return true;
+    };
+
+    const handleCustomUploadCategory = async ({ file, onSuccess, onError, onProgress }) => {
+        try {
+            const res = await uploadCategoryImage(file, onProgress);
+            const uploadedUrl = res.metadata?.url;
+            onSuccess({ url: uploadedUrl }, file);
+            message.success('Đã tự động tải logo lên Cloudinary thành công!');
+        } catch (err) {
+            onError(err);
+            message.error(err.response?.data?.message || 'Tải logo lên Cloudinary thất bại!');
+        }
     };
 
     const handleCategoryUploadChange = ({ fileList: newFileList }) => {
-        setCategoryFileList(newFileList.slice(-1)); // Only allow 1 image
+        const updated = newFileList.slice(-1).map(f => {
+            if (f.response && f.response.url) {
+                return { ...f, url: f.response.url };
+            }
+            return f;
+        });
+        setCategoryFileList(updated);
     };
 
     const handleCategorySubmit = async (values) => {
+        if (submittingCategory) return;
+
+        const isStillUploading = categoryFileList.some(f => f.status === 'uploading');
+        if (isStillUploading) {
+            message.warning('Logo đang được tải lên Cloudinary, vui lòng chờ trong giây lát!');
+            return;
+        }
+
         setSubmittingCategory(true);
         try {
             const formData = new FormData();
-            formData.append('nameCategory', values.nameCategory);
+            formData.append('nameCategory', values.nameCategory.trim());
 
-            if (categoryFileList[0]?.originFileObj) {
+            const readyUrl = categoryFileList[0]?.response?.url || categoryFileList[0]?.url || values.imageUrlCategory?.trim();
+            if (readyUrl) {
+                formData.append('imageCategory', readyUrl);
+            } else if (categoryFileList[0]?.originFileObj) {
                 formData.append('imageCategory', categoryFileList[0].originFileObj);
-            } else if (values.imageUrlCategory) {
-                formData.append('imageCategory', values.imageUrlCategory.trim());
-            } else if (categoryFileList[0]?.url) {
-                formData.append('imageCategory', categoryFileList[0].url);
+            }
+
+            if (!readyUrl && !categoryFileList[0]?.originFileObj) {
+                message.error('Vui lòng chọn ảnh logo thương hiệu!');
+                setSubmittingCategory(false);
+                return;
             }
 
             if (editingCategory) {
                 await updateCategory(editingCategory._id, formData);
-                message.success('Cập nhật danh mục thành công!');
+                message.success('Cập nhật thương hiệu thành công!');
             } else {
-                if (categoryFileList.length === 0 && !values.imageUrlCategory) {
-                    message.error('Vui lòng tải lên ảnh hoặc nhập URL ảnh đại diện cho danh mục!');
-                    setSubmittingCategory(false);
-                    return;
-                }
                 await createCategory(formData);
-                message.success('Tạo danh mục thành công!');
+                message.success('Tạo thương hiệu thành công!');
             }
             setCategoryModalVisible(false);
             fetchCategories();
         } catch (error) {
             console.error('Error submitting category:', error);
-            message.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu danh mục');
+            message.error(error.response?.data?.message || 'Có lỗi xảy ra khi lưu thương hiệu');
         } finally {
             setSubmittingCategory(false);
         }
@@ -961,15 +1012,17 @@ function AdminDashboard() {
         return matchesSearch && matchesCategory;
     });
 
-    const filteredOrders = orders.filter(order => {
-        const matchesStatus = filterOrderStatus === 'all' || order.status === filterOrderStatus;
-        let matchesDate = true;
-        if (filterOrderDate) {
-            const orderDate = new Date(order.createdAt).toLocaleDateString('sv');
-            matchesDate = orderDate === filterOrderDate;
-        }
-        return matchesStatus && matchesDate;
-    });
+    const filteredOrders = [...orders]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .filter(order => {
+            const matchesStatus = filterOrderStatus === 'all' || order.status === filterOrderStatus;
+            let matchesDate = true;
+            if (filterOrderDate) {
+                const orderDate = new Date(order.createdAt).toLocaleDateString('sv');
+                matchesDate = orderDate === filterOrderDate;
+            }
+            return matchesStatus && matchesDate;
+        });
 
     const getSalesOverviewData = () => {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1309,8 +1362,8 @@ function AdminDashboard() {
                                                         dataIndex: 'status',
                                                         key: 'status',
                                                         render: (st) => (
-                                                            <Tag color={st === 'completed' ? 'success' : st === 'cancelled' ? 'error' : 'warning'}>
-                                                                {st === 'completed' ? 'Hoàn thành' : st === 'confirmed' ? 'Chuẩn bị' : 'Đang xử lý'}
+                                                            <Tag color={st === 'completed' ? 'success' : st === 'confirmed' ? 'blue' : st === 'cancelled' ? 'error' : 'warning'}>
+                                                                {st === 'completed' ? 'Hoàn thành' : st === 'confirmed' ? 'Đang chuẩn bị' : 'Chờ xử lý'}
                                                             </Tag>
                                                         )
                                                     },
@@ -1608,10 +1661,14 @@ function AdminDashboard() {
                                         <td className="py-3.5">
                                             <Tag color={
                                                 o.status === 'completed' ? 'success' :
+                                                o.status === 'confirmed' ? 'blue' :
+                                                o.status === 'delivered' ? 'cyan' :
                                                 o.status === 'cancelled' ? 'error' : 'warning'
                                             } className="font-semibold text-xs rounded-full border px-2.5 py-0.5">
                                                 {o.status === 'completed' ? 'Đã hoàn thành' :
-                                                 o.status === 'cancelled' ? 'Đã hủy' : 'Đang xử lý'}
+                                                 o.status === 'confirmed' ? 'Đang chuẩn bị' :
+                                                 o.status === 'delivered' ? 'Đang giao' :
+                                                 o.status === 'cancelled' ? 'Đã hủy' : 'Chờ xác nhận'}
                                             </Tag>
                                         </td>
                                         <td className="py-3.5 text-right font-bold text-gray-900 pr-2">
@@ -1852,7 +1909,7 @@ function AdminDashboard() {
     const handleFlashSaleSubmit = async (values) => {
         setSubmittingFlashSale(true);
         try {
-            await setFlashSaleConfig(values);
+            await requestSetFlashSaleConfig(values);
             message.success('Cập nhật cấu hình Flash Sale thành công!');
             fetchFlashSale();
         } catch (error) {
@@ -2450,16 +2507,13 @@ function AdminDashboard() {
     };
 
     // Fetch messages for a specific user
-    const fetchMessagesForUser = async (userId, silent = false) => {
+    const fetchMessagesForUser = async (userId) => {
         if (!userId) return;
-        if (!silent) setLoadingChatMessages(true);
         try {
             const res = await requestGetMessages(userId);
             setChatMessages(res.metadata || []);
         } catch (error) {
             console.error('Error fetching chat messages for user:', error);
-        } finally {
-            if (!silent) setLoadingChatMessages(false);
         }
     };
 
@@ -2482,7 +2536,7 @@ function AdminDashboard() {
 
         fetchMessagesForUser(selectedUserId);
         const msgTimer = setInterval(() => {
-            fetchMessagesForUser(selectedUserId, true);
+            fetchMessagesForUser(selectedUserId);
         }, 3000);
 
         return () => clearInterval(msgTimer);
@@ -2508,9 +2562,9 @@ function AdminDashboard() {
 
         try {
             await requestSendMessage(text, selectedUserId);
-            fetchMessagesForUser(selectedUserId, true);
+            fetchMessagesForUser(selectedUserId);
             fetchConversations(); // refresh last message
-        } catch (error) {
+        } catch {
             message.error('Không thể gửi phản hồi');
         }
     };
@@ -2522,8 +2576,8 @@ function AdminDashboard() {
             message.success('Đã chấp nhận cuộc trò chuyện');
             fetchConversations();
             fetchChatStats();
-            fetchMessagesForUser(userId, true);
-        } catch (error) {
+            fetchMessagesForUser(userId);
+        } catch {
             message.error('Không thể chấp nhận cuộc trò chuyện');
         }
     };
@@ -2536,7 +2590,7 @@ function AdminDashboard() {
             setSelectedUserId(null); // Clear selected user panel
             fetchConversations();
             fetchChatStats();
-        } catch (error) {
+        } catch {
             message.error('Không thể đóng cuộc trò chuyện');
         }
     };
@@ -3122,30 +3176,38 @@ function AdminDashboard() {
                         <Input.TextArea rows={4} placeholder="Viết mô tả ngắn về mẫu giày..." />
                     </Form.Item>
 
-                    <Form.Item label="Hình ảnh sản phẩm (Tải lên tối đa 5 ảnh, định dạng JPG/PNG, dung lượng < 5MB)">
+                    <Form.Item label="Thêm hình ảnh sản phẩm">
                         <Upload
                             listType="picture-card"
                             fileList={productFileList}
                             beforeUpload={handleBeforeUploadProduct}
+                            customRequest={handleCustomUploadProduct}
                             onChange={handleProductUploadChange}
                             multiple
                             maxCount={5}
                         >
                             {productFileList.length < 5 && (
-                                <div>
-                                    <PlusOutlined />
-                                    <div style={{ marginTop: 8 }}>Chọn ảnh</div>
+                                <div className="text-center">
+                                    <PlusOutlined className="text-lg text-gray-500" />
+                                    <div style={{ marginTop: 8 }} className="text-xs text-gray-600 font-medium">Chọn ảnh</div>
                                 </div>
                             )}
                         </Upload>
                     </Form.Item>
 
-                    <Form.Item
-                        name="imageUrlsProduct"
-                        label="Hoặc dán URL các ảnh sản phẩm (ngăn cách bằng dấu phẩy nếu có nhiều ảnh)"
-                    >
-                        <Input.TextArea rows={2} placeholder="Ví dụ: https://res.cloudinary.com/image1.png, https://res.cloudinary.com/image2.png" />
-                    </Form.Item>
+                    <div className="mb-4">
+                        <details className="text-xs text-gray-500 cursor-pointer">
+                            <summary className="hover:text-black font-medium text-gray-600">Hoặc dán URL ảnh có sẵn (tuỳ chọn thêm)</summary>
+                            <div className="mt-2">
+                                <Form.Item
+                                    name="imageUrlsProduct"
+                                    className="mb-0"
+                                >
+                                    <Input.TextArea rows={2} placeholder="Ví dụ: https://res.cloudinary.com/u1vmfjx6/image/upload/sample1.jpg, https://res.cloudinary.com/u1vmfjx6/image/upload/sample2.jpg" />
+                                </Form.Item>
+                            </div>
+                        </details>
+                    </div>
 
                     <Divider />
 
@@ -3155,6 +3217,7 @@ function AdminDashboard() {
                             type="primary"
                             htmlType="submit"
                             loading={submittingProduct}
+                            disabled={submittingProduct}
                             className="bg-green-600 hover:bg-green-700 text-white border-none"
                         >
                             Lưu thông tin
@@ -3188,29 +3251,37 @@ function AdminDashboard() {
                         <Input placeholder="Ví dụ: Nike, Adidas, Puma..." />
                     </Form.Item>
 
-                    <Form.Item label="Ảnh đại diện danh mục (Chọn 1 ảnh JPG/PNG, dung lượng < 5MB)">
+                    <Form.Item label="Logo thương hiệu">
                         <Upload
                             listType="picture-card"
                             fileList={categoryFileList}
                             beforeUpload={handleBeforeUploadCategory}
+                            customRequest={handleCustomUploadCategory}
                             onChange={handleCategoryUploadChange}
                             maxCount={1}
                         >
                             {categoryFileList.length < 1 && (
-                                <div>
-                                    <PlusOutlined />
-                                    <div style={{ marginTop: 8 }}>Chọn ảnh</div>
+                                <div className="text-center">
+                                    <PlusOutlined className="text-lg text-gray-500" />
+                                    <div style={{ marginTop: 8 }} className="text-xs text-gray-600 font-medium">Chọn ảnh</div>
                                 </div>
                             )}
                         </Upload>
                     </Form.Item>
 
-                    <Form.Item
-                        name="imageUrlCategory"
-                        label="Hoặc dán URL ảnh thương hiệu trực tiếp"
-                    >
-                        <Input placeholder="Ví dụ: https://res.cloudinary.com/brand_logo.png" />
-                    </Form.Item>
+                    <div className="mb-4">
+                        <details className="text-xs text-gray-500 cursor-pointer">
+                            <summary className="hover:text-black font-medium text-gray-600">Hoặc dán URL ảnh có sẵn (tuỳ chọn thêm)</summary>
+                            <div className="mt-2">
+                                <Form.Item
+                                    name="imageUrlCategory"
+                                    className="mb-0"
+                                >
+                                    <Input placeholder="Ví dụ: https://res.cloudinary.com/u1vmfjx6/image/upload/sample.jpg" />
+                                </Form.Item>
+                            </div>
+                        </details>
+                    </div>
 
                     <Divider />
 
@@ -3220,9 +3291,10 @@ function AdminDashboard() {
                             type="primary"
                             htmlType="submit"
                             loading={submittingCategory}
+                            disabled={submittingCategory}
                             className="bg-green-600 hover:bg-green-700 text-white border-none"
                         >
-                            Lưu danh mục
+                            Lưu thương hiệu
                         </Button>
                     </div>
                 </Form>

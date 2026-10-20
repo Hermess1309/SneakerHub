@@ -13,6 +13,10 @@ function Checkout() {
 
     useEffect(() => {
         getCart();
+        const queryParams = new URLSearchParams(window.location.search);
+        if (queryParams.get('error') === 'vnpay_failed') {
+            message.warning('Giao dịch thanh toán qua VNPay đã bị hủy hoặc chưa hoàn tất.');
+        }
     }, []);
 
     const [paymentMethod, setPaymentMethod] = useState('cod');
@@ -83,13 +87,21 @@ function Checkout() {
             } else if (paymentMethod === 'momo') {
                 const res = await requestPayment({ typePayment: typePayment });
                 await getCart();
-                window.open(res.metadata.payUrl, '_blank');
-                message.info('Vui lòng hoàn tất thanh toán trên cổng MoMo');
+                const newWin = window.open(res.metadata.payUrl, '_blank');
+                if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+                    window.location.href = res.metadata.payUrl;
+                } else {
+                    message.info('Vui lòng hoàn tất thanh toán trên cổng MoMo');
+                }
             } else if (paymentMethod === 'vnpay') {
                 const res = await requestPayment({ typePayment: typePayment });
                 await getCart();
-                window.open(res.metadata, '_blank');
-                message.info('Vui lòng hoàn tất thanh toán trên cổng VNPay');
+                const newWin = window.open(res.metadata, '_blank');
+                if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+                    window.location.href = res.metadata;
+                } else {
+                    message.info('Vui lòng hoàn tất thanh toán trên cổng VNPay');
+                }
             }
         } catch (error) {
             message.error(error.response?.data?.message || 'Có lỗi xảy ra khi đặt hàng');

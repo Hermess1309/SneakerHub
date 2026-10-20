@@ -26,7 +26,6 @@ function RegisterUser() {
     const onFinish = async (values) => {
         setLoading(true);
         try {
-            const { confirmPassword, ...registerData } = values;
             await requestRegister(values);
             message.success('Đăng ký thành công');
             setTimeout(() => {

@@ -30,8 +30,14 @@ app.get('/', (req, res) => {
 routes(app);
 
 app.use((err, req, res, next) => {
-    const statusCode = err.statusCode || 500;
-    console.log(err);
+    let statusCode = err.statusCode;
+    if (!statusCode) {
+        if (err.name === 'MulterError') {
+            statusCode = 400;
+        } else {
+            statusCode = 500;
+        }
+    }
     return res.status(statusCode).json({
         success: false,
         message: err.message || 'Lỗi server',

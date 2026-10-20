@@ -50,7 +50,7 @@ function PaymentSuccess() {
     const getStatusBadge = (status) => {
         const statusConfig = {
             pending: { text: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800' },
-            confirmed: { text: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800' },
+            confirmed: { text: 'Đang chuẩn bị', color: 'bg-blue-100 text-blue-800' },
             shipping: { text: 'Đang giao hàng', color: 'bg-purple-100 text-purple-800' },
             completed: { text: 'Hoàn thành', color: 'bg-green-100 text-green-800' },
             cancelled: { text: 'Đã hủy', color: 'bg-red-100 text-red-800' },

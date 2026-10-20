@@ -1,25 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
-// Ensure upload directory exists
-const uploadDir = 'src/uploads/complaints';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    },
-});
-
-const upload = multer({ storage: storage });
+const createUpload = require('../middleware/uploadMiddleware');
+const upload = createUpload('complaints');
 
 const { asyncHandler } = require('../auth/checkAuth');
 const { authAdmin } = require('../middleware/authUser');

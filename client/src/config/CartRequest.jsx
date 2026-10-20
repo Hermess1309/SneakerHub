@@ -1,4 +1,3 @@
-import request from './request';
 import { apiClient } from './axiosClient';
 
 const apiCart = '/api/cart';
@@ -18,8 +17,8 @@ export const requestUpdateQuantity = async (data) => {
     return res.data;
 };
 
-export const requestDeleteProductCart = async (data) => {
-    const res = await apiClient.delete(`${apiCart}/delete/${data}`);
+export const requestDeleteProductCart = async (data, config) => {
+    const res = await apiClient.delete(`${apiCart}/delete/${data}`, config);
     return res.data;
 };
 

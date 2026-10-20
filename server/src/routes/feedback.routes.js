@@ -1,19 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'src/uploads/feedback');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
-    },
-});
-
-const upload = multer({ storage: storage });
+const createUpload = require('../middleware/uploadMiddleware');
+const upload = createUpload('feedback');
 
 const { asyncHandler } = require('../auth/checkAuth');
 const { authAdmin, authUser } = require('../middleware/authUser');

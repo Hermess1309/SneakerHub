@@ -3,6 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { listProduct } from '../config/ProductRequest';
 import { requestGetMessages, requestSendMessage } from '../config/MessageRequest';
+import { requestSendGeminiMessage } from '../config/ChatRequest';
 import { Badge, message } from 'antd';
 import { CloseOutlined, SendOutlined } from '@ant-design/icons';
 import { Sparkles, Headphones, Paperclip, Smile } from 'lucide-react';
@@ -17,19 +18,37 @@ function ChatWidget() {
     const [suggestedProducts, setSuggestedProducts] = useState([]);
     const [showSizeGuide, setShowSizeGuide] = useState(false);
     const [sizeBrand, setSizeBrand] = useState('nike'); // 'nike' or 'adidas'
+    const [isAiTyping, setIsAiTyping] = useState(false);
     
     // Human Chat States
     const [humanMessages, setHumanMessages] = useState([]);
     
-    // AI Chat States
-    const [aiMessages, setAiMessages] = useState([
-        {
-            _id: 'ai-init',
-            senderId: 'ai',
-            content: 'Dạ xin chào! Em là Trợ lý ảo SneakerHub Assistant. Em có thể hỗ trợ anh/chị tư vấn chọn size giày, tìm kiếm sản phẩm hot hoặc kiểm tra chính sách đổi trả. Anh/chị hãy bấm chọn nút hỏi nhanh hoặc gửi câu hỏi để em giải đáp nhé!',
-            createdAt: new Date().toISOString()
+    // AI Chat States (loaded from sessionStorage if present)
+    const [aiMessages, setAiMessages] = useState(() => {
+        try {
+            const saved = sessionStorage.getItem('sneakerhub_ai_chat_session');
+            if (saved) return JSON.parse(saved);
+        } catch {
+            // ignore JSON parse error
         }
-    ]);
+        return [
+            {
+                _id: 'ai-init',
+                senderId: 'ai',
+                content: 'Dạ xin chào! Em là Trợ lý ảo SneakerHub Assistant. Em có thể hỗ trợ anh/chị tư vấn chọn size giày, tìm kiếm sản phẩm hot hoặc kiểm tra chính sách đổi trả. Anh/chị hãy bấm chọn nút hỏi nhanh hoặc gửi câu hỏi để em giải đáp nhé!',
+                createdAt: new Date().toISOString()
+            }
+        ];
+    });
+
+    // Save AI messages to sessionStorage
+    useEffect(() => {
+        try {
+            sessionStorage.setItem('sneakerhub_ai_chat_session', JSON.stringify(aiMessages));
+        } catch {
+            // ignore storage quota error
+        }
+    }, [aiMessages]);
 
     const [inputText, setInputText] = useState('');
     const [unreadCount, setUnreadCount] = useState(0);
@@ -90,6 +109,12 @@ function ChatWidget() {
         return () => clearInterval(timer);
     }, [activeMode, isOpen, isHiddenPath, dataUser]);
 
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    };
+
     // Reset unread count when opening chat
     useEffect(() => {
         if (isOpen) {
@@ -97,12 +122,6 @@ function ChatWidget() {
             scrollToBottom();
         }
     }, [isOpen, humanMessages, aiMessages, activeMode]);
-
-    const scrollToBottom = () => {
-        setTimeout(() => {
-            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-    };
 
     const renderMessageText = (content) => {
         if (content.includes('[Bảng hướng dẫn chọn size]')) {
@@ -146,57 +165,54 @@ function ChatWidget() {
         return <span className="whitespace-pre-line">{content}</span>;
     };
 
-    // AI Bot Reply Logic
-    const triggerAiReply = (userText) => {
-        const textLower = userText.toLowerCase();
-        let aiReply = '';
-        let matchedProducts = [];
-
-        // Clear previous suggestions on other questions
+    // Gemini AI Chat Request Logic
+    const handleAiChat = async (userText) => {
+        setIsAiTyping(true);
         setSuggestedProducts([]);
 
-        if (textLower.includes('size') || textLower.includes('kích thước') || textLower.includes('kích cỡ') || textLower.includes('đo chân')) {
-            aiReply = 'Dạ SneakerHub xin tư vấn kích thước (size) cho anh/chị ạ! Thông thường đối với Nike Air Force 1 hoặc Jordan 1, anh/chị nên chọn đúng size chuẩn (true to size). Với giày chạy bộ Adidas Ultraboost hoặc Yeezy, anh/chị nên tăng lên 0.5 đến 1 size để đi thoải mái nhất ạ.\n\nĐể biết kích thước chính xác nhất, anh/chị hãy bấm xem [Bảng hướng dẫn chọn size] tại đây nhé!';
-        } else if (textLower.includes('tìm sản phẩm') || textLower.includes('mua giày') || textLower.includes('giày hot') || textLower.includes('sản phẩm')) {
-            const getRandomProducts = (list, count = 3) => {
-                if (!list || list.length === 0) return [];
-                const shuffled = [...list].sort(() => 0.5 - Math.random());
-                return shuffled.slice(0, count);
-            };
-            const randomProds = getRandomProducts(productList, 3);
-            if (randomProds.length > 0) {
-                matchedProducts = randomProds;
-                aiReply = 'Dạ hiện tại SneakerHub đang có các dòng sản phẩm bán rất chạy như:\n' +
-                    randomProds.map(p => `- ${p.nameProduct} (${p.descriptionProduct ? p.descriptionProduct.substring(0, 30) + '...' : 'Trẻ trung, năng động'})`).join('\n') +
-                    '\nAnh/chị có thể tìm kiếm trên thanh tìm kiếm của Web hoặc click trực tiếp vào các nút gợi ý sản phẩm bên dưới để xem chi tiết nhé!';
-            } else {
-                aiReply = 'Dạ hiện tại shop chưa có sản phẩm nào có sẵn trên hệ thống ạ.';
-            }
-        } else if (textLower.includes('đơn hàng') || textLower.includes('kiểm tra đơn') || textLower.includes('lịch sử đơn')) {
-            aiReply = 'Dạ để kiểm tra đơn hàng, anh/chị vui lòng đăng nhập tài khoản, nhấp vào Avatar góc trên cùng bên phải và chọn "Lịch sử mua hàng". Ở đó sẽ có mã vận đơn và trạng thái giao hàng chi tiết của anh/chị ạ!';
-        } else if (textLower.includes('khuyến mãi') || textLower.includes('mã giảm giá') || textLower.includes('coupon') || textLower.includes('giảm giá')) {
-            aiReply = 'Dạ hiện tại shop đang áp dụng chương trình khuyến mãi nhập mã **SNEAKERNEW** giảm ngay 10% cho đơn hàng đầu tiên, hoặc mã **FREESHIP** để miễn phí vận chuyển toàn quốc. Anh/chị nhanh tay áp dụng lúc thanh toán nhé!';
-        } else if (textLower.includes('đổi trả') || textLower.includes('chính sách đổi') || textLower.includes('hoàn tiền') || textLower.includes('trả hàng')) {
-            aiReply = 'Dạ chính sách đổi trả của SneakerHub cho phép anh/chị đổi size hoặc mẫu khác trong vòng 7 ngày kể từ khi nhận hàng (yêu cầu sản phẩm còn nguyên tem mác, hộp và chưa qua sử dụng). Shop hỗ trợ miễn phí đổi trả nếu phát sinh lỗi từ nhà sản xuất ạ.';
-        } else {
-            aiReply = 'Dạ, em là Trợ lý ảo SneakerHub Assistant. Em có thể hỗ trợ anh/chị tìm kiếm sản phẩm, tư vấn chọn size giày, kiểm tra khuyến mãi hoặc chính sách đổi trả. Anh/chị hãy click vào các nút gợi ý hỏi nhanh hoặc gõ câu hỏi để em giải đáp ngay ạ! Nếu cần gặp nhân viên hỗ trợ, anh/chị vui lòng nhấn tab "Nhân viên hỗ trợ" nhé!';
-        }
+        // Build history context (last 6 messages)
+        const historyContext = aiMessages.slice(-6).map(m => ({
+            senderId: m.senderId === 'ai' ? 'ai' : 'user',
+            content: m.content
+        }));
 
-        setTimeout(() => {
+        try {
+            const res = await requestSendGeminiMessage({
+                message: userText,
+                history: historyContext
+            });
+
+            const replyText = res.metadata?.message || 'Dạ SneakerHub Assistant có thể hỗ trợ gì thêm cho anh/chị ạ?';
+            const products = res.metadata?.products || [];
+
             setAiMessages(prev => [
                 ...prev,
                 {
                     _id: `ai-${Date.now()}`,
                     senderId: 'ai',
-                    content: aiReply,
+                    content: replyText,
                     createdAt: new Date().toISOString()
                 }
             ]);
-            if (matchedProducts.length > 0) {
-                setSuggestedProducts(matchedProducts);
+
+            if (products.length > 0) {
+                setSuggestedProducts(products);
             }
+        } catch (error) {
+            console.error('Error calling Gemini AI:', error);
+            setAiMessages(prev => [
+                ...prev,
+                {
+                    _id: `ai-${Date.now()}`,
+                    senderId: 'ai',
+                    content: 'Dạ, hiện tại kết nối tới trợ lý AI đang bị gián đoạn trong giây lát. Anh/chị có thể chuyển sang tab "Nhân viên hỗ trợ" hoặc liên hệ Zalo 0899227066 để được nhân viên SneakerHub hỗ trợ ngay nhé ạ!',
+                    createdAt: new Date().toISOString()
+                }
+            ]);
+        } finally {
+            setIsAiTyping(false);
             scrollToBottom();
-        }, 800); // 800ms simulation delay
+        }
     };
 
     const handleSendMessage = async (textToSend = null) => {
@@ -214,7 +230,7 @@ function ChatWidget() {
             };
             setAiMessages(prev => [...prev, userMsg]);
             scrollToBottom();
-            triggerAiReply(text);
+            handleAiChat(text);
         } else {
             const tempMsg = {
                 _id: `temp-${Date.now()}`,
@@ -229,7 +245,7 @@ function ChatWidget() {
             try {
                 await requestSendMessage(text);
                 fetchHumanMessages();
-            } catch (error) {
+            } catch {
                 message.error('Không thể gửi tin nhắn. Vui lòng thử lại.');
             }
         }
@@ -343,46 +359,62 @@ function ChatWidget() {
                         <div className="space-y-4 mt-2">
                             {activeMode === 'ai' ? (
                                 // Render AI conversation
-                                aiMessages.map((msg) => {
-                                    const isSelf = msg.senderId !== 'ai';
-                                    
-                                    if (!isSelf) {
-                                        // AI message: light gray bubble, dark text, black circle avatar on left
-                                        return (
-                                            <div key={msg._id} className="flex gap-2.5 items-start w-full">
-                                                {/* Circular black avatar logo */}
-                                                <div className="w-7 h-7 bg-black text-white font-extrabold rounded-full flex items-center justify-center text-[8px] shrink-0 border border-gray-800 shadow-sm select-none">
-                                                    SH
-                                                </div>
-                                                <div className="flex flex-col items-start max-w-[75%]">
-                                                    <div className="bg-[#f1f0f0] text-gray-800 px-3.5 py-2.5 rounded-2xl rounded-tl-none text-[13px] leading-relaxed shadow-sm">
-                                                        {renderMessageText(msg.content)}
+                                <>
+                                    {aiMessages.map((msg) => {
+                                        const isSelf = msg.senderId !== 'ai';
+                                        
+                                        if (!isSelf) {
+                                            // AI message: light gray bubble, dark text, black circle avatar on left
+                                            return (
+                                                <div key={msg._id} className="flex gap-2.5 items-start w-full">
+                                                    {/* Circular black avatar logo */}
+                                                    <div className="w-7 h-7 bg-black text-white font-extrabold rounded-full flex items-center justify-center text-[8px] shrink-0 border border-gray-800 shadow-sm select-none">
+                                                        SH
                                                     </div>
-                                                    {msg._id === 'ai-init' && (
-                                                        <button
-                                                            onClick={() => setActiveMode('human')}
-                                                            className="mt-2 text-xs font-semibold bg-[#007aff] hover:bg-[#0062cc] text-white px-3.5 py-1.5 rounded-full border-none cursor-pointer transition-all shadow-sm"
-                                                        >
-                                                            Chuyển sang nhân viên
-                                                        </button>
-                                                    )}
+                                                    <div className="flex flex-col items-start max-w-[75%]">
+                                                        <div className="bg-[#f1f0f0] text-gray-800 px-3.5 py-2.5 rounded-2xl rounded-tl-none text-[13px] leading-relaxed shadow-sm">
+                                                            {renderMessageText(msg.content)}
+                                                        </div>
+                                                        {msg._id === 'ai-init' && (
+                                                            <button
+                                                                onClick={() => setActiveMode('human')}
+                                                                className="mt-2 text-xs font-semibold bg-[#007aff] hover:bg-[#0062cc] text-white px-3.5 py-1.5 rounded-full border-none cursor-pointer transition-all shadow-sm"
+                                                            >
+                                                                Chuyển sang nhân viên
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    } else {
-                                        // User message: solid blue bubble, white text, aligned to right
-                                        return (
-                                            <div key={msg._id} className="flex flex-col items-end w-full">
-                                                <div className="bg-[#007aff] text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-[13px] shadow-sm w-fit max-w-[75%]">
-                                                    {msg.content}
+                                            );
+                                        } else {
+                                            // User message: solid blue bubble, white text, aligned to right
+                                            return (
+                                                <div key={msg._id} className="flex flex-col items-end w-full">
+                                                    <div className="bg-[#007aff] text-white px-4 py-2.5 rounded-2xl rounded-tr-none text-[13px] shadow-sm w-fit max-w-[75%]">
+                                                        {msg.content}
+                                                    </div>
+                                                    <span className="text-[9px] text-gray-400 mt-1 mr-1 select-none flex items-center gap-0.5">
+                                                        ✓ Đã gửi
+                                                    </span>
                                                 </div>
-                                                <span className="text-[9px] text-gray-400 mt-1 mr-1 select-none flex items-center gap-0.5">
-                                                    ✓ Đã gửi
-                                                </span>
+                                            );
+                                        }
+                                    })}
+
+                                    {/* Typing indicator bubble */}
+                                    {isAiTyping && (
+                                        <div className="flex gap-2.5 items-start w-full animate-fade-in">
+                                            <div className="w-7 h-7 bg-black text-white font-extrabold rounded-full flex items-center justify-center text-[8px] shrink-0 border border-gray-800 shadow-sm select-none">
+                                                SH
                                             </div>
-                                        );
-                                    }
-                                })
+                                            <div className="bg-[#f1f0f0] text-gray-500 px-3.5 py-3 rounded-2xl rounded-tl-none text-[13px] flex items-center gap-1.5 shadow-sm">
+                                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 // Render Human Agent conversation
                                 <>
@@ -397,7 +429,6 @@ function ChatWidget() {
                                     </div>
 
                                     {humanMessages.map((msg) => {
-                                        const isSelf = msg.senderId === (dataUser?._id || 'guest');
                                         const isFromAdmin = msg.senderId !== (dataUser?._id || 'guest') && msg.senderId !== msg.userId;
 
                                         if (isFromAdmin) {
@@ -455,40 +486,48 @@ function ChatWidget() {
                                             setSuggestedProducts([]);
                                             navigate(`/product/${p._id}`);
                                         }}
-                                        className="bg-blue-50 border border-blue-200 hover:border-blue-400 text-blue-700 px-3.5 py-1.5 rounded-full text-xs font-bold cursor-pointer shrink-0 transition-all flex items-center gap-1.5 shadow-sm"
+                                        className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-2 shadow-sm"
                                     >
-                                        👟 {p.nameProduct}
+                                        {p.image ? (
+                                            <img src={p.image} alt={p.nameProduct} className="w-6 h-6 object-cover rounded" />
+                                        ) : (
+                                            <span>👟</span>
+                                        )}
+                                        <span className="truncate max-w-[130px] font-bold">{p.nameProduct}</span>
+                                        {p.priceProduct ? (
+                                            <span className="text-[11px] text-blue-600 font-extrabold">{p.priceProduct.toLocaleString()}đ</span>
+                                        ) : null}
                                     </button>
                                 ))}
                             </>
                         ) : (
                             <>
                                 <button
-                                    onClick={() => handleQuickReply('Tìm sản phẩm')}
+                                    onClick={() => handleQuickReply('Gợi ý cho mình các mẫu giày sneaker hot nhất tại shop')}
                                     className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
                                 >
                                     🔍 Tìm sản phẩm
                                 </button>
                                 <button
-                                    onClick={() => handleQuickReply('Tư vấn kích thước')}
+                                    onClick={() => handleQuickReply('Tư vấn cho mình cách chọn size giày chuẩn theo chân')}
                                     className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
                                 >
                                     📏 Tư vấn kích thước
                                 </button>
                                 <button
-                                    onClick={() => handleQuickReply('Kiểm tra đơn hàng')}
+                                    onClick={() => handleQuickReply('Kiểm tra đơn hàng gần nhất của mình')}
                                     className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
                                 >
                                     📦 Kiểm tra đơn hàng
                                 </button>
                                 <button
-                                    onClick={() => handleQuickReply('Xem khuyến mãi')}
+                                    onClick={() => handleQuickReply('Shop hiện có những mã giảm giá và khuyến mãi nào còn dùng được?')}
                                     className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
                                 >
                                     🏷️ Xem khuyến mãi
                                 </button>
                                 <button
-                                    onClick={() => handleQuickReply('Chính sách đổi trả')}
+                                    onClick={() => handleQuickReply('Chính sách bảo hành và đổi trả giày của shop như thế nào?')}
                                     className="bg-white border border-gray-200 hover:border-black text-gray-700 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer shrink-0 transition-all flex items-center gap-1 shadow-sm"
                                 >
                                     🔄 Chính sách đổi trả
@@ -663,13 +702,14 @@ function ChatWidget() {
                         >
                             <Paperclip className="w-5 h-5 text-gray-400 hover:text-black cursor-pointer transition-colors" />
                             <input
-                                placeholder="Nhập tin nhắn, nhấn Enter để gửi..."
+                                placeholder={isAiTyping && activeMode === 'ai' ? "Trợ lý AI đang soạn câu trả lời..." : "Nhập tin nhắn, nhấn Enter để gửi..."}
                                 value={inputText}
+                                disabled={isAiTyping && activeMode === 'ai'}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="flex-1 bg-transparent border-none py-2 text-sm text-gray-800 focus:outline-none placeholder-gray-400"
+                                className="flex-1 bg-transparent border-none py-2 text-sm text-gray-800 focus:outline-none placeholder-gray-400 disabled:opacity-50"
                             />
                             <Smile className="w-5 h-5 text-gray-400 hover:text-black cursor-pointer transition-colors" />
-                            {inputText.trim() && (
+                            {inputText.trim() && !(isAiTyping && activeMode === 'ai') && (
                                 <button
                                     type="submit"
                                     className="bg-transparent hover:bg-gray-100 text-[#007aff] w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer transition-all shrink-0"

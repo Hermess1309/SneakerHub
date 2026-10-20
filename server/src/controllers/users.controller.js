@@ -218,7 +218,7 @@ class UsersController {
     }
 
     async getAllUsers(req, res) {
-        const users = await userModel.find();
+        const users = await userModel.find().select('-password');
         return new OK({
             message: 'Lấy danh sách người dùng thành công',
             metadata: users,
@@ -227,6 +227,22 @@ class UsersController {
 
     async deleteUser(req, res) {
         const { id } = req.params;
+        if (req.user && req.user.toString() === id.toString()) {
+            throw new BadRequestError('Bạn không thể tự xóa tài khoản của chính mình');
+        }
+
+        const user = await userModel.findById(id);
+        if (!user) {
+            throw new NotFoundError('Người dùng không tồn tại');
+        }
+
+        if (user.isAdmin) {
+            const adminCount = await userModel.countDocuments({ isAdmin: true });
+            if (adminCount <= 1) {
+                throw new BadRequestError('Không thể xóa quản trị viên duy nhất trong hệ thống');
+            }
+        }
+
         await userModel.findByIdAndDelete(id);
         return new OK({
             message: 'Xóa tài khoản thành công',
@@ -235,10 +251,22 @@ class UsersController {
 
     async toggleAdmin(req, res) {
         const { id } = req.params;
+        if (req.user && req.user.toString() === id.toString()) {
+            throw new BadRequestError('Bạn không thể tự thay đổi quyền hạn của chính mình');
+        }
+
         const user = await userModel.findById(id);
         if (!user) {
             throw new NotFoundError('Người dùng không tồn tại');
         }
+
+        if (user.isAdmin) {
+            const adminCount = await userModel.countDocuments({ isAdmin: true });
+            if (adminCount <= 1) {
+                throw new BadRequestError('Hệ thống phải có ít nhất một quản trị viên');
+            }
+        }
+
         user.isAdmin = !user.isAdmin;
         user.role = user.isAdmin ? 'admin' : 'user'; // keep role in sync
         await user.save();
