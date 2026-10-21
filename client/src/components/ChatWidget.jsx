@@ -8,6 +8,129 @@ import { Badge, message } from 'antd';
 import { CloseOutlined, SendOutlined } from '@ant-design/icons';
 import { Sparkles, Headphones, Paperclip, Smile } from 'lucide-react';
 
+// Normalizes strings for resilient fuzzy matching
+const normalizeText = (str) => {
+    return (str || '')
+        .toLowerCase()
+        .replace(/[‘'’“”\"\"-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+// Matches a single product from an inline bold snippet (e.g. **Giày Nike Vomero 18** or **Nike Court Lite 4**)
+const findSingleMatchedProduct = (snippet, products) => {
+    if (!snippet || !products || !products.length) return null;
+    const normSnippet = normalizeText(snippet);
+    if (normSnippet.length < 4) return null;
+
+    const skipWords = [
+        'nike', 'adidas', 'puma', 'new balance', 'giá bán', 'mã sản phẩm', 
+        'size sẵn có', 'bảng size', 'chính sách', 'đổi trả', 'bảo hành', 
+        'thanh toán', '37.5', '38', '38.5', '39', '40', '41', '42'
+    ];
+    if (skipWords.includes(normSnippet)) return null;
+
+    // 1. Direct containment match
+    for (const prod of products) {
+        const normName = normalizeText(prod.nameProduct);
+        if (normName.includes(normSnippet) || normSnippet.includes(normName)) {
+            return prod;
+        }
+    }
+
+    // 2. Keyword match with model numbers preserved (e.g. ['nike', 'vomero', '18'])
+    const stopWords = ['giay', 'giày', 'mau', 'mẫu', 'nam', 'nu', 'nữ', 'cac', 'các', 'va', 'và', 'doi', 'đôi'];
+    const words = normSnippet
+        .split(' ')
+        .filter(w => (w.length > 2 || /\d/.test(w)) && !stopWords.includes(w));
+
+    if (words.length >= 2) {
+        for (const prod of products) {
+            const normName = normalizeText(prod.nameProduct);
+            if (words.every(w => normName.includes(w))) {
+                return prod;
+            }
+        }
+    }
+
+    return null;
+};
+
+// Finds all products mentioned in an AI message text to render product cards
+const findMatchedProducts = (text, products) => {
+    if (!text || !products || !products.length) return [];
+    const normText = normalizeText(text);
+    const matches = [];
+
+    const boldMatches = [...text.matchAll(/\*\*(.*?)\*\*/g)].map(m => m[1].trim());
+
+    for (const prod of products) {
+        const normName = normalizeText(prod.nameProduct);
+        const author = normalizeText(prod.metadata?.author);
+        let matched = false;
+
+        // 1. Check if product code is in text (e.g. HM6804 607, FD6574-112)
+        if (author && author.length >= 4 && normText.includes(author)) {
+            matched = true;
+        }
+
+        // 2. Check code pattern in product name
+        if (!matched) {
+            const codeMatch = prod.nameProduct.match(/[A-Z0-9]{4,8}[-\s][0-9]{3}/i);
+            if (codeMatch && normText.includes(normalizeText(codeMatch[0]))) {
+                matched = true;
+            }
+        }
+
+        // 3. Check bold segments
+        if (!matched) {
+            for (const bold of boldMatches) {
+                const normBold = normalizeText(bold);
+                if (normBold.length >= 4) {
+                    const skipWords = [
+                        'nike', 'adidas', 'puma', 'new balance', 'giá bán', 'mã sản phẩm', 
+                        'size sẵn có', 'bảng size', 'chính sách', 'đổi trả', 'bảo hành', 
+                        'thanh toán', '37.5', '38', '38.5', '39', '40', '41', '42'
+                    ];
+                    if (skipWords.includes(normBold)) continue;
+
+                    if (normName.includes(normBold) || normBold.includes(normName)) {
+                        matched = true;
+                        break;
+                    }
+
+                    const stopWords = ['giay', 'giày', 'mau', 'mẫu', 'nam', 'nu', 'nữ', 'cac', 'các', 'va', 'và', 'doi', 'đôi'];
+                    const boldWords = normBold
+                        .split(' ')
+                        .filter(w => (w.length > 2 || /\d/.test(w)) && !stopWords.includes(w));
+
+                    if (boldWords.length >= 2 && boldWords.every(w => normName.includes(w))) {
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 4. Check core model phrase (e.g. "vomero 18", "court lite 4", "book 2", "kd19")
+        if (!matched) {
+            const cleanModel = prod.nameProduct
+                .replace(/^giày\s*(?:sneaker|chạy bộ|tennis|pickleball|bóng rổ)?\s*(?:nam|nữ)?\s*/i, '')
+                .replace(/\s*[‘'’].*$/, '')
+                .trim();
+            const normModel = normalizeText(cleanModel);
+            if (normModel.length >= 6 && normText.includes(normModel)) {
+                matched = true;
+            }
+        }
+
+        if (matched && !matches.some(m => m._id?.toString() === prod._id?.toString())) {
+            matches.push(prod);
+        }
+    }
+    return matches.slice(0, 4);
+};
+
 function ChatWidget() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -124,45 +247,75 @@ function ChatWidget() {
     }, [isOpen, humanMessages, aiMessages, activeMode]);
 
     const renderMessageText = (content) => {
-        if (content.includes('[Bảng hướng dẫn chọn size]')) {
-            const parts = content.split('[Bảng hướng dẫn chọn size]');
-            return (
-                <span className="whitespace-pre-line">
-                    {parts[0]}
-                    <button
-                        onClick={() => setShowSizeGuide(true)}
-                        className="bg-[#007aff] hover:bg-[#0062cc] text-white px-2.5 py-1 text-xs font-bold rounded-lg border-none cursor-pointer transition-colors shadow-sm inline-block mx-1 my-1"
-                    >
-                        📏 Xem bảng size giày
-                    </button>
-                    {parts[1]}
-                </span>
-            );
-        }
-        if (content.includes('- ')) {
-            const lines = content.split('\n');
-            return (
-                <div className="space-y-1">
-                    {lines.map((line, idx) => {
-                        const match = line.match(/^-\s*(.*?)\s*\((.*?)\)$/);
-                        if (match) {
-                            const prodName = match[1];
-                            const prodDesc = match[2];
-                            const prod = productList.find(p => p.nameProduct === prodName);
-                            if (prod) {
-                                return (
-                                    <div key={idx}>
-                                        - <Link to={`/product/${prod._id}`} className="text-blue-600 underline font-bold hover:text-blue-800" onClick={() => setIsOpen(false)}>{prodName}</Link> ({prodDesc})
-                                    </div>
-                                );
-                            }
-                        }
-                        return <div key={idx}>{line}</div>;
-                    })}
-                </div>
-            );
-        }
-        return <span className="whitespace-pre-line">{content}</span>;
+        if (!content) return null;
+
+        const lines = content.split('\n');
+
+        return (
+            <div className="space-y-1.5 leading-relaxed">
+                {lines.map((line, lineIdx) => {
+                    if (!line.trim()) {
+                        return <div key={lineIdx} className="h-1.5" />;
+                    }
+
+                    // Handle special size guide token if present in this line
+                    let subSegments = [line];
+                    if (line.includes('[Bảng hướng dẫn chọn size]')) {
+                        const parts = line.split('[Bảng hướng dẫn chọn size]');
+                        subSegments = [parts[0], '__SIZE_GUIDE_BUTTON__', parts[1]];
+                    }
+
+                    return (
+                        <div key={lineIdx} className="text-[13px]">
+                            {subSegments.map((segment, segIdx) => {
+                                if (segment === '__SIZE_GUIDE_BUTTON__') {
+                                    return (
+                                        <button
+                                            key={segIdx}
+                                            onClick={() => setShowSizeGuide(true)}
+                                            className="bg-[#007aff] hover:bg-[#0062cc] text-white px-2.5 py-1 text-xs font-bold rounded-lg border-none cursor-pointer transition-colors shadow-sm inline-flex items-center gap-1 mx-1 my-0.5"
+                                        >
+                                            📏 Xem bảng size giày
+                                        </button>
+                                    );
+                                }
+
+                                // Parse bold tokens **...**
+                                const parts = segment.split(/(\*\*.*?\*\*)/g);
+                                return parts.map((part, pIdx) => {
+                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                        const innerText = part.slice(2, -2).trim();
+                                        const matchedProduct = findSingleMatchedProduct(innerText, productList);
+
+                                        if (matchedProduct) {
+                                            return (
+                                                <Link
+                                                    key={`${segIdx}-${pIdx}`}
+                                                    to={`/product/${matchedProduct._id}`}
+                                                    className="text-[#007aff] hover:text-[#0056b3] font-bold underline underline-offset-2 decoration-blue-300 hover:decoration-blue-600 inline-flex items-center gap-0.5 mx-0.5 transition-colors cursor-pointer"
+                                                    title={`Xem ${matchedProduct.nameProduct}`}
+                                                >
+                                                    {innerText}
+                                                    <span className="text-[10px] no-underline">↗</span>
+                                                </Link>
+                                            );
+                                        }
+
+                                        return (
+                                            <strong key={`${segIdx}-${pIdx}`} className="font-bold text-gray-900">
+                                                {innerText}
+                                            </strong>
+                                        );
+                                    }
+
+                                    return <span key={`${segIdx}-${pIdx}`}>{part}</span>;
+                                });
+                            })}
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
     // Gemini AI Chat Request Logic
@@ -183,7 +336,12 @@ function ChatWidget() {
             });
 
             const replyText = res.metadata?.message || 'Dạ SneakerHub Assistant có thể hỗ trợ gì thêm cho anh/chị ạ?';
-            const products = res.metadata?.products || [];
+            let products = res.metadata?.products || [];
+
+            // If backend returned no products, scan replyText against productList on client
+            if (!products || products.length === 0) {
+                products = findMatchedProducts(replyText, productList);
+            }
 
             setAiMessages(prev => [
                 ...prev,
@@ -191,6 +349,7 @@ function ChatWidget() {
                     _id: `ai-${Date.now()}`,
                     senderId: 'ai',
                     content: replyText,
+                    products: products,
                     createdAt: new Date().toISOString()
                 }
             ]);
@@ -364,6 +523,10 @@ function ChatWidget() {
                                         const isSelf = msg.senderId !== 'ai';
                                         
                                         if (!isSelf) {
+                                            const msgProducts = (msg.products && msg.products.length > 0)
+                                                ? msg.products
+                                                : findMatchedProducts(msg.content, productList);
+
                                             // AI message: light gray bubble, dark text, black circle avatar on left
                                             return (
                                                 <div key={msg._id} className="flex gap-2.5 items-start w-full">
@@ -371,10 +534,77 @@ function ChatWidget() {
                                                     <div className="w-7 h-7 bg-black text-white font-extrabold rounded-full flex items-center justify-center text-[8px] shrink-0 border border-gray-800 shadow-sm select-none">
                                                         SH
                                                     </div>
-                                                    <div className="flex flex-col items-start max-w-[75%]">
+                                                    <div className="flex flex-col items-start max-w-[85%]">
                                                         <div className="bg-[#f1f0f0] text-gray-800 px-3.5 py-2.5 rounded-2xl rounded-tl-none text-[13px] leading-relaxed shadow-sm">
                                                             {renderMessageText(msg.content)}
                                                         </div>
+
+                                                        {/* Clickable Product Recommendation Cards */}
+                                                        {msgProducts && msgProducts.length > 0 && (
+                                                            <div className="mt-2.5 w-full flex flex-col gap-1.5 animate-fade-in">
+                                                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 pl-1">
+                                                                    👟 Giày gợi ý cho bạn:
+                                                                </span>
+                                                                <div className="flex flex-col gap-2 w-full">
+                                                                    {msgProducts.map((p) => {
+                                                                        const imgSrc = p.image || p.imagesProduct?.[0] || p.imageProduct?.[0];
+                                                                        const price = p.priceProduct;
+                                                                        const discount = Number(p.discountProduct) || 0;
+                                                                        const hasDiscount = discount > 0;
+                                                                        const finalPrice = hasDiscount 
+                                                                            ? Math.round(price * (1 - discount / 100))
+                                                                            : price;
+
+                                                                        return (
+                                                                            <div
+                                                                                key={p._id}
+                                                                                className="bg-white border border-gray-200 hover:border-[#007aff] rounded-xl p-2.5 shadow-sm hover:shadow-md transition-all flex items-center gap-2.5 group"
+                                                                            >
+                                                                                {imgSrc ? (
+                                                                                    <img
+                                                                                        src={imgSrc}
+                                                                                        alt={p.nameProduct}
+                                                                                        className="w-13 h-13 object-cover rounded-lg border border-gray-100 shrink-0 group-hover:scale-105 transition-transform"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="w-13 h-13 bg-gray-100 rounded-lg flex items-center justify-center text-xl shrink-0">
+                                                                                        👟
+                                                                                    </div>
+                                                                                )}
+                                                                                <div className="flex-grow min-w-0 flex flex-col justify-between">
+                                                                                    <Link
+                                                                                        to={`/product/${p._id}`}
+                                                                                        className="text-xs font-bold text-gray-800 hover:text-[#007aff] line-clamp-2 block leading-snug transition-colors"
+                                                                                        title={p.nameProduct}
+                                                                                    >
+                                                                                        {p.nameProduct}
+                                                                                    </Link>
+                                                                                    <div className="mt-1.5 flex items-center justify-between gap-1">
+                                                                                        <div>
+                                                                                            <span className="text-xs font-extrabold text-[#007aff]">
+                                                                                                {finalPrice ? `${finalPrice.toLocaleString('vi-VN')}đ` : 'Liên hệ'}
+                                                                                            </span>
+                                                                                            {hasDiscount ? (
+                                                                                                <span className="text-[10px] text-gray-400 line-through ml-1">
+                                                                                                    {price.toLocaleString('vi-VN')}đ
+                                                                                                </span>
+                                                                                            ) : null}
+                                                                                        </div>
+                                                                                        <Link
+                                                                                            to={`/product/${p._id}`}
+                                                                                            className="text-[11px] font-semibold bg-[#007aff] hover:bg-[#0062cc] text-white px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm transition-colors shrink-0"
+                                                                                        >
+                                                                                            Xem ↗
+                                                                                        </Link>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
                                                         {msg._id === 'ai-init' && (
                                                             <button
                                                                 onClick={() => setActiveMode('human')}

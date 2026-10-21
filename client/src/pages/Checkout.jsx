@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useStore } from '../hooks/useStore';
-import { Package, CreditCard, Wallet } from 'lucide-react';
 import { message } from 'antd';
 import { requestUpdateInfoCart } from '../config/CartRequest';
 import { requestPayment } from '../config/paymentRequest';
+import codLogo from '../assets/images/payment-cod.png';
+import momoLogo from '../assets/images/payment-momo.png';
+import vnpayLogo from '../assets/images/payment-vnpay.png';
 
 function Checkout() {
     const { cart, getCart } = useStore();
@@ -112,19 +114,19 @@ function Checkout() {
         {
             id: 'cod',
             name: 'Thanh toán khi nhận hàng (COD)',
-            icon: <Package size={24} />,
+            logo: codLogo,
             description: 'Thanh toán bằng tiền mặt khi nhận hàng',
         },
         {
             id: 'momo',
             name: 'Ví MoMo',
-            icon: <Wallet size={24} />,
+            logo: momoLogo,
             description: 'Thanh toán qua ví điện tử MoMo',
         },
         {
             id: 'vnpay',
             name: 'VNPay',
-            icon: <CreditCard size={24} />,
+            logo: vnpayLogo,
             description: 'Thanh toán qua cổng VNPay',
         },
     ];
@@ -231,31 +233,35 @@ function Checkout() {
                                         <div
                                             key={method.id}
                                             onClick={() => setPaymentMethod(method.id)}
-                                            className={`p-4 border-2 rounded-lg cursor-pointer transition ${
+                                            className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                                                 paymentMethod === method.id
-                                                    ? 'border-blue-500 bg-blue-50'
-                                                    : 'border-gray-200 hover:border-blue-300'
+                                                    ? 'border-blue-500 bg-blue-50/70 shadow-xs'
+                                                    : 'border-gray-200 hover:border-blue-300 bg-white'
                                             }`}
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <div className="mt-1">
+                                            <div className="flex items-center gap-3.5">
+                                                <div className="flex items-center">
                                                     <input
                                                         type="radio"
                                                         name="paymentMethod"
                                                         value={method.id}
                                                         checked={paymentMethod === method.id}
                                                         onChange={() => setPaymentMethod(method.id)}
-                                                        className="w-4 h-4"
+                                                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="w-11 h-11 rounded-lg bg-white border border-gray-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+                                                    <img
+                                                        src={method.logo}
+                                                        alt={method.name}
+                                                        className="w-full h-full object-contain"
                                                     />
                                                 </div>
                                                 <div className="flex-grow">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <div className="text-blue-600">{method.icon}</div>
-                                                        <span className="font-semibold text-gray-800">
-                                                            {method.name}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600">{method.description}</p>
+                                                    <span className="font-bold text-gray-900 block text-sm sm:text-base">
+                                                        {method.name}
+                                                    </span>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{method.description}</p>
                                                 </div>
                                             </div>
                                         </div>

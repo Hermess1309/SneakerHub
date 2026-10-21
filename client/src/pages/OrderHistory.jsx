@@ -230,20 +230,26 @@ function OrderHistory() {
             render: (status) => {
                 const colors = {
                     pending: 'gold',
-                    processing: 'blue',
-                    shipping: 'cyan',
+                    confirmed: 'blue',
+                    delivered: 'cyan',
                     completed: 'green',
-                    cancelled: 'red'
+                    cancelled: 'red',
+                    // Fallback compatibility keys
+                    processing: 'blue',
+                    shipping: 'cyan'
                 };
                 const labels = {
                     pending: 'Chờ xác nhận',
-                    processing: 'Đang chuẩn bị',
-                    shipping: 'Đang giao',
+                    confirmed: 'Đang chuẩn bị',
+                    delivered: 'Đang giao',
                     completed: 'Đã hoàn thành',
-                    cancelled: 'Đã hủy'
+                    cancelled: 'Đã hủy',
+                    // Fallback compatibility keys
+                    processing: 'Đang chuẩn bị',
+                    shipping: 'Đang giao'
                 };
                 return (
-                    <Tag color={colors[status] || 'default'} className="font-medium text-xs">
+                    <Tag color={colors[status] || 'default'} className="font-semibold text-xs px-2.5 py-0.5 rounded-full border">
                         {labels[status] || status}
                     </Tag>
                 );
@@ -423,8 +429,35 @@ function OrderHistory() {
                             <Descriptions.Item label="Họ tên nhận hàng">{selectedOrder.fullName}</Descriptions.Item>
                             <Descriptions.Item label="Số điện thoại">{selectedOrder.phoneNumber}</Descriptions.Item>
                             <Descriptions.Item label="Địa chỉ nhận">{selectedOrder.address}</Descriptions.Item>
-                            <Descriptions.Item label="Trạng thái thanh toán">
+                            <Descriptions.Item label="Phương thức thanh toán">
                                 <span className="uppercase font-semibold">{selectedOrder.paymentMethod}</span>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Trạng thái đơn hàng">
+                                {(() => {
+                                    const colors = {
+                                        pending: 'gold',
+                                        confirmed: 'blue',
+                                        delivered: 'cyan',
+                                        completed: 'green',
+                                        cancelled: 'red',
+                                        processing: 'blue',
+                                        shipping: 'cyan'
+                                    };
+                                    const labels = {
+                                        pending: 'Chờ xác nhận',
+                                        confirmed: 'Đang chuẩn bị',
+                                        delivered: 'Đang giao',
+                                        completed: 'Đã hoàn thành',
+                                        cancelled: 'Đã hủy',
+                                        processing: 'Đang chuẩn bị',
+                                        shipping: 'Đang giao'
+                                    };
+                                    return (
+                                        <Tag color={colors[selectedOrder.status] || 'default'} className="font-semibold text-xs px-2.5 py-0.5 rounded-full border">
+                                            {labels[selectedOrder.status] || selectedOrder.status}
+                                        </Tag>
+                                    );
+                                })()}
                             </Descriptions.Item>
                         </Descriptions>
 

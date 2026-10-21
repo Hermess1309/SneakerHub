@@ -26,10 +26,16 @@ const decreaseProductStock = async (products) => {
     try {
         for (const item of products) {
             if (item.productId) {
-                await productModel.findByIdAndUpdate(
-                    item.productId,
-                    { $inc: { stockProduct: -item.quantity } }
-                );
+                const prod = await productModel.findById(item.productId);
+                if (prod) {
+                    prod.stockProduct = Math.max(0, (prod.stockProduct || 0) - (item.quantity || 1));
+                    if (item.size && prod.metadata && prod.metadata.sizeStock) {
+                        const cur = prod.metadata.sizeStock[item.size] || 0;
+                        prod.metadata.sizeStock[item.size] = Math.max(0, cur - (item.quantity || 1));
+                        prod.markModified('metadata');
+                    }
+                    await prod.save();
+                }
             }
         }
     } catch (error) {
@@ -278,7 +284,10 @@ class PaymentController {
             .find({})
             .sort({ createdAt: -1 })
             .populate('userId', 'fullName email')
-            .populate('products.productId', '')
+            .populate({
+                path: 'products.productId',
+                populate: { path: 'categoryProduct' }
+            })
             .populate('couponId')
             .populate('confirmedBy', 'fullName email role');
         return new OK({
@@ -289,8 +298,8 @@ class PaymentController {
 
     async updatePayment(req, res) {
         const { orderId } = req.params;
-        const { status } = req.body;
-        if (!orderId || !status) {
+        const { status, internalNote } = req.body;
+        if (!orderId || (!status && internalNote === undefined)) {
             throw new BadRequestError('Bạn đang thiếu thông tin');
         }
 
@@ -300,19 +309,30 @@ class PaymentController {
         }
 
         const oldStatus = findPayment.status;
-        findPayment.status = status;
-        if (status === 'confirmed' && oldStatus !== 'confirmed') {
-            findPayment.confirmedBy = req.user;
+        if (status) {
+            findPayment.status = status;
+            if (status === 'confirmed' && oldStatus !== 'confirmed') {
+                findPayment.confirmedBy = req.user;
+            }
+        }
+        if (internalNote !== undefined) {
+            findPayment.internalNote = internalNote;
         }
         await findPayment.save();
 
         if (status === 'cancelled' && oldStatus !== 'cancelled') {
             for (const item of findPayment.products) {
                 if (item.productId) {
-                    await productModel.findByIdAndUpdate(
-                        item.productId,
-                        { $inc: { stockProduct: item.quantity } }
-                    );
+                    const prod = await productModel.findById(item.productId);
+                    if (prod) {
+                        prod.stockProduct = (prod.stockProduct || 0) + (item.quantity || 1);
+                        if (item.size && prod.metadata && prod.metadata.sizeStock) {
+                            const cur = prod.metadata.sizeStock[item.size] || 0;
+                            prod.metadata.sizeStock[item.size] = cur + (item.quantity || 1);
+                            prod.markModified('metadata');
+                        }
+                        await prod.save();
+                    }
                 }
             }
             if (findPayment.couponId) {

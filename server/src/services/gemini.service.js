@@ -244,10 +244,10 @@ Nguyên tắc bắt buộc:
             }
 
             const statusMap = {
-                pending: 'Đang xử lý',
-                confirmed: 'Đã xác nhận',
-                delivered: 'Đang giao hàng',
-                completed: 'Giao hàng thành công',
+                pending: 'Chờ xác nhận',
+                confirmed: 'Đang chuẩn bị',
+                delivered: 'Đang giao',
+                completed: 'Đã hoàn thành',
                 cancelled: 'Đã hủy'
             };
 
@@ -284,6 +284,90 @@ Nguyên tắc bắt buộc:
             default:
                 return { error: `Không nhận diện được công cụ ${name}` };
         }
+    }
+
+    // Helper: Detect products mentioned in generated text
+    matchProductsFromText(text, products) {
+        if (!text || !products || !products.length) return [];
+        const normalize = (str) => (str || '')
+            .toLowerCase()
+            .replace(/[‘'’“”\"\"-]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        const normText = normalize(text);
+        const matches = [];
+
+        // Extract bold segments: **...**
+        const boldMatches = [...text.matchAll(/\*\*(.*?)\*\*/g)].map(m => m[1].trim());
+
+        for (const prod of products) {
+            const normName = normalize(prod.nameProduct);
+            const author = normalize(prod.metadata?.author);
+            let matched = false;
+
+            // 1. Check if product code is mentioned
+            if (author && author.length >= 4 && normText.includes(author)) {
+                matched = true;
+            }
+
+            // 2. Check product code pattern from name
+            if (!matched) {
+                const codeMatch = prod.nameProduct.match(/[A-Z0-9]{4,8}[-\s][0-9]{3}/i);
+                if (codeMatch && normText.includes(normalize(codeMatch[0]))) {
+                    matched = true;
+                }
+            }
+
+            // 3. Check bold segments
+            if (!matched) {
+                for (const bold of boldMatches) {
+                    const normBold = normalize(bold);
+                    if (normBold.length >= 4) {
+                        const skipWords = [
+                            'nike', 'adidas', 'puma', 'new balance', 'giá bán', 'mã sản phẩm',
+                            'size sẵn có', 'bảng size', 'chính sách', 'đổi trả', 'bảo hành',
+                            'thanh toán', '37.5', '38', '38.5', '39', '40', '41', '42'
+                        ];
+                        if (skipWords.includes(normBold)) continue;
+
+                        if (normName.includes(normBold) || normBold.includes(normName)) {
+                            matched = true;
+                            break;
+                        }
+
+                        const stopWords = ['giay', 'giày', 'mau', 'mẫu', 'nam', 'nu', 'nữ', 'cac', 'các', 'va', 'và', 'doi', 'đôi'];
+                        const boldWords = normBold
+                            .split(' ')
+                            .filter(w => (w.length > 2 || /\d/.test(w)) && !stopWords.includes(w));
+
+                        if (boldWords.length >= 2) {
+                            if (boldWords.every(w => normName.includes(w))) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Check core model phrase (e.g. "vomero 18", "court lite 4", "book 2", "kd19")
+            if (!matched) {
+                const cleanModel = prod.nameProduct
+                    .replace(/^giày\s*(?:sneaker|chạy bộ|tennis|pickleball|bóng rổ)?\s*(?:nam|nữ)?\s*/i, '')
+                    .replace(/\s*[‘'’].*$/, '')
+                    .trim();
+                const normModel = normalize(cleanModel);
+                if (normModel.length >= 6 && normText.includes(normModel)) {
+                    matched = true;
+                }
+            }
+
+            if (matched && !matches.some(m => m._id.toString() === prod._id.toString())) {
+                matches.push(prod);
+            }
+        }
+        return matches;
     }
 
     // Call Gemini API with automatic Function Calling Loop
@@ -428,6 +512,31 @@ Nguyên tắc bắt buộc:
         // Extract final text
         const textParts = parts.filter(p => p.text).map(p => p.text);
         const finalText = textParts.join('\n').trim() || 'Dạ SneakerHub Assistant có thể hỗ trợ gì thêm cho anh/chị ạ?';
+
+        // Auto-detect products from finalText if none or few were captured
+        if (capturedProducts.length < 4) {
+            try {
+                const allProds = await Product.find({})
+                    .select('_id nameProduct priceProduct discountProduct stockProduct metadata imagesProduct')
+                    .lean();
+
+                const matched = this.matchProductsFromText(finalText, allProds);
+                for (const p of matched) {
+                    if (!capturedProducts.some(cp => cp._id?.toString() === p._id?.toString())) {
+                        capturedProducts.push({
+                            _id: p._id,
+                            nameProduct: p.nameProduct,
+                            priceProduct: p.priceProduct,
+                            discountProduct: p.discountProduct,
+                            image: p.imagesProduct?.[0] || null
+                        });
+                    }
+                    if (capturedProducts.length >= 4) break;
+                }
+            } catch (err) {
+                console.error('Error scanning products from text in gemini.service:', err.message);
+            }
+        }
 
         return {
             success: true,

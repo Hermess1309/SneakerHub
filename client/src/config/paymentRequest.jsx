@@ -18,8 +18,11 @@ export const requestPaymentsAdmin = async () => {
     return res.data;
 };
 
-export const requestUpdatePaymentStatus = async (orderId, status) => {
-    const res = await apiClient.put(`${apiPayment}/admin/update/${orderId}`, { status });
+export const requestUpdatePaymentStatus = async (orderId, status, internalNote) => {
+    const payload = {};
+    if (status !== undefined) payload.status = status;
+    if (internalNote !== undefined) payload.internalNote = internalNote;
+    const res = await apiClient.put(`${apiPayment}/admin/update/${orderId}`, payload);
     return res.data;
 };
 

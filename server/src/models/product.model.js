@@ -7,6 +7,7 @@ const productModel = new Schema(
         imagesProduct: { type: Array, required: true },
         nameProduct: { type: String, required: true },
         priceProduct: { type: Number, required: true },
+        costPrice: { type: Number, default: 0 },
         discountProduct: { type: Number, default: 0 },
         stockProduct: { type: Number, default: 0 },
         descriptionProduct: { type: String, required: true },

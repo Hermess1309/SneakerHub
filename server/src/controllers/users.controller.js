@@ -218,7 +218,7 @@ class UsersController {
     }
 
     async getAllUsers(req, res) {
-        const users = await userModel.find().select('-password');
+        const users = await userModel.find().sort({ createdAt: -1 }).select('-password');
         return new OK({
             message: 'Lấy danh sách người dùng thành công',
             metadata: users,

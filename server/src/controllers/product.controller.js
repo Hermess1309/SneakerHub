@@ -64,6 +64,7 @@ class ProductController {
         const {
             nameProduct,
             priceProduct,
+            costPrice,
             discountProduct,
             stockProduct,
             descriptionProduct,
@@ -190,6 +191,7 @@ class ProductController {
             newProduct = await productModel.create({
                 nameProduct: trimmedName,
                 priceProduct: numPrice,
+                costPrice: Number(costPrice || 0),
                 discountProduct: numDiscount,
                 stockProduct: numStock,
                 descriptionProduct: descriptionProduct.trim(),
@@ -222,6 +224,7 @@ class ProductController {
         const {
             nameProduct,
             priceProduct,
+            costPrice,
             discountProduct,
             stockProduct,
             descriptionProduct,
@@ -325,11 +328,14 @@ class ProductController {
             }
         }
 
+        const numCost = costPrice !== undefined && costPrice !== '' ? Number(costPrice) : (findProduct.costPrice || 0);
+
         const updateProduct = await productModel.findByIdAndUpdate(
             id,
             {
                 nameProduct: trimmedName,
                 priceProduct: numPrice,
+                costPrice: numCost,
                 discountProduct: numDiscount,
                 stockProduct: numStock,
                 descriptionProduct: descriptionProduct ? descriptionProduct.trim() : findProduct.descriptionProduct,

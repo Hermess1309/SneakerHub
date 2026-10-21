@@ -4,7 +4,7 @@ const { BadRequestError } = require('../core/error.response');
 
 class FlashSaleController {
     async setFlashSale(req, res) {
-        const { title, endTime, isActive } = req.body;
+        const { title, startTime, endTime, isActive } = req.body;
 
         if (!endTime) {
             throw new BadRequestError('Cần cung cấp thời gian kết thúc Flash Sale');
@@ -14,12 +14,14 @@ class FlashSaleController {
         let config = await flashsaleModel.findOne();
         if (config) {
             config.title = title || config.title;
+            if (startTime) config.startTime = new Date(startTime);
             config.endTime = new Date(endTime);
             config.isActive = isActive !== undefined ? isActive : config.isActive;
             await config.save();
         } else {
             config = await flashsaleModel.create({
                 title: title || 'Flash Sale Chớp Nhoáng',
+                startTime: startTime ? new Date(startTime) : new Date(),
                 endTime: new Date(endTime),
                 isActive: isActive !== undefined ? isActive : true
             });

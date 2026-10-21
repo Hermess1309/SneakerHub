@@ -55,3 +55,43 @@
   width: 24px !important;
   background-color: #ffffff !important;
 }
+
+/* Print styles for SneakerHub.vn Shipping Labels and Invoices */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #sneakerhub-printable-area,
+  #sneakerhub-printable-area * {
+    visibility: visible !important;
+  }
+  #sneakerhub-printable-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 9999999 !important;
+  }
+  .sneakerhub-print-sheet {
+    display: block !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    margin: 0 auto 20px auto !important;
+    background: white !important;
+  }
+  .sneakerhub-print-sheet:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    margin-bottom: 0 !important;
+  }
+  @page {
+    size: auto;
+    margin: 5mm;
+  }
+}

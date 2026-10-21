@@ -9,8 +9,10 @@ const paymentModel = new Schema(
             {
                 productId: { type: mongoose.Schema.Types.ObjectId, ref: 'products' },
                 quantity: { type: Number, default: 1 },
+                size: { type: String, default: '' },
             },
         ],
+        internalNote: { type: String, default: '' },
         totalPrice: { type: Number, default: 0 }, // 100.000đ
         fullName: { type: String, require: true },
         phoneNumber: { type: String, require: true },
