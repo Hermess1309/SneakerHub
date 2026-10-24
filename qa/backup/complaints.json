@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "6a81c1dd4cd4ac47aa284665",
+    "userId": "6a7c416e967fb2386154f2cc",
+    "paymentId": "6a81bccb4cd4ac47aa2842c4",
+    "reason": "Sai kích cỡ",
+    "content": "Sai màu khi giao",
+    "images": [],
+    "status": "pending",
+    "adminResponse": "",
+    "createdAt": "2026-08-16T13:57:49.582Z",
+    "updatedAt": "2026-08-16T13:57:49.582Z",
+    "__v": 0
+  }
+]

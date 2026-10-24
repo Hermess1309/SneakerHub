@@ -1,0 +1,102 @@
+[
+  {
+    "_id": "6a815b10615d13ce2f08f4f4",
+    "userId": "6a815aeb615d13ce2f08f4ac",
+    "senderId": "6a815aeb615d13ce2f08f4ac",
+    "content": "Xin chXin chao Admin, toi can tu van ve size giay Nike Air Force 1.",
+    "isRead": true,
+    "createdAt": "2026-08-16T06:39:12.030Z",
+    "updatedAt": "2026-08-16T06:40:26.993Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a815b6e615d13ce2f08f5d5",
+    "userId": "6a815aeb615d13ce2f08f4ac",
+    "senderId": "6a7c416e967fb2386154f2cc",
+    "content": "Chao ban, doi voi dong Nike Air Force 1 ban nen chon dung size (true to size) hoc giam nua size nhe!",
+    "isRead": true,
+    "createdAt": "2026-08-16T06:40:46.143Z",
+    "updatedAt": "2026-08-16T06:45:34.156Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a815caa66fc4eef6b9b5430",
+    "userId": "6a815aeb615d13ce2f08f4ac",
+    "senderId": "6a815aeb615d13ce2f08f4ac",
+    "content": "Alo admin oi",
+    "isRead": true,
+    "createdAt": "2026-08-16T06:46:02.564Z",
+    "updatedAt": "2026-08-16T06:47:26.187Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a815d1666fc4eef6b9b55fd",
+    "userId": "6a815aeb615d13ce2f08f4ac",
+    "senderId": "6a7c416e967fb2386154f2cc",
+    "content": "ChChung toi rat san long ho tro ban tu van size.",
+    "isRead": true,
+    "createdAt": "2026-08-16T06:47:50.734Z",
+    "updatedAt": "2026-08-16T06:54:04.520Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a815e9766fc4eef6b9b57fb",
+    "userId": "6a815aeb615d13ce2f08f4ac",
+    "senderId": "6a815aeb615d13ce2f08f4ac",
+    "content": "anh ơi ",
+    "isRead": true,
+    "createdAt": "2026-08-16T06:54:15.663Z",
+    "updatedAt": "2026-08-16T07:11:51.811Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a816404a16b43089ae24525",
+    "userId": "6a7cb5ba26b47f921ed5f23e",
+    "senderId": "6a7cb5ba26b47f921ed5f23e",
+    "content": "Tìm sản phẩm",
+    "isRead": true,
+    "createdAt": "2026-08-16T07:17:24.115Z",
+    "updatedAt": "2026-10-20T15:22:42.174Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a816407a16b43089ae2452f",
+    "userId": "6a7cb5ba26b47f921ed5f23e",
+    "senderId": "6a7cb5ba26b47f921ed5f23e",
+    "content": "bạn ơi ",
+    "isRead": true,
+    "createdAt": "2026-08-16T07:17:27.874Z",
+    "updatedAt": "2026-10-20T15:22:42.174Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad7915e191bd0ef64bfbea8",
+    "userId": "6ad7915e7cb9986ecba7bd5b",
+    "senderId": "6ad7915e7cb9986ecba7bd5b",
+    "content": "Xin chào, tôi là khách vãng lai test",
+    "isRead": true,
+    "createdAt": "2026-10-20T16:05:50.963Z",
+    "updatedAt": "2026-10-21T13:16:48.705Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad8bb45770b9b60ef403dd4",
+    "userId": "6ad7915e7cb9986ecba7bd5b",
+    "senderId": "6a7c416e967fb2386154f2cc",
+    "content": "Nhân viên chăm sóc khách hàng đã chấp nhận yêu cầu và tham gia hỗ trợ.",
+    "isRead": false,
+    "createdAt": "2026-10-21T13:16:53.571Z",
+    "updatedAt": "2026-10-21T13:16:53.571Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad8bb49770b9b60ef403dfb",
+    "userId": "6ad7915e7cb9986ecba7bd5b",
+    "senderId": "6a7c416e967fb2386154f2cc",
+    "content": "Cuộc trò chuyện đã được đóng bởi nhân viên hỗ trợ. Xin cảm ơn quý khách!",
+    "isRead": false,
+    "createdAt": "2026-10-21T13:16:57.053Z",
+    "updatedAt": "2026-10-21T13:16:57.053Z",
+    "__v": 0
+  }
+]

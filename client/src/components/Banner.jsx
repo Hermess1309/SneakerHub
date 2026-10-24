@@ -65,29 +65,47 @@ function Banner() {
     const images = [
         {
             id: 1,
-            url: 'https://res.cloudinary.com/u1vmfjx6/image/upload/v1786549719/1207f601-432d-4782-aa6b-ed5b852ac8b1.png',
-            title: 'Bộ sưu tập Nike',
+            url: 'https://res.cloudinary.com/u1vmfjx6/image/upload/q_auto:best,f_auto/v1792760363/sneakerhub/banner_nike_mind001_v24.png',
+            tag: 'BỘ SƯU TẬP MỚI',
+            title: 'BỘ SƯU TẬP NIKE',
             subtitle: 'Khám phá các sản phẩm Nike mới nhất',
+            buttonText: 'Khám phá ngay',
         },
         {
             id: 2,
-            url: 'https://theme.hstatic.net/1000237375/1000756917/14/slider_item_2_image.jpg?v=1840',
-            title: 'Ưu đãi đặc biệt',
-            subtitle: 'Giảm giá lên đến 50%',
+            url: 'https://res.cloudinary.com/u1vmfjx6/image/upload/q_auto:best,f_auto/v1792758496/sneakerhub/banner_adidas_audi_f1.png',
+            tag: 'ADIDAS X AUDI REVOLUT F1 TEAM',
+            title: 'ADIDAS X AUDI REVOLUT F1 TEAM',
+            subtitle: 'Viva São Paulo. Bộ sưu tập Sampa Soul.',
+            buttonText: 'Mua ngay',
         },
         {
             id: 3,
-            url: 'https://theme.hstatic.net/1000237375/1000756917/14/slider_item_4_image.jpg?v=1840',
-            title: 'Phong cách độc đáo',
-            subtitle: 'Tạo dấu ấn riêng của bạn',
+            url: 'https://res.cloudinary.com/u1vmfjx6/image/upload/q_auto:best,f_auto/v1792769192/sneakerhub/banner_newbalance_collection_v1.png',
+            tag: 'NEW BALANCE HERITAGE',
+            title: 'BỘ SƯU TẬP NEW BALANCE',
+            subtitle: 'Biểu tượng phong cách cổ điển & thời thượng',
+            buttonText: 'Khám phá ngay',
         },
     ];
 
     const handleBannerClick = (imageId) => {
         if (imageId === 1) {
-            const nikeCat = categories.find(cat => cat.nameCategory.toLowerCase() === 'nike');
+            const nikeCat = categories.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase() === 'nike');
             if (nikeCat) {
                 searchParams.set('brand', nikeCat._id);
+                setSearchParams(searchParams);
+            }
+        } else if (imageId === 2) {
+            const adidasCat = categories.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase() === 'adidas');
+            if (adidasCat) {
+                searchParams.set('brand', adidasCat._id);
+                setSearchParams(searchParams);
+            }
+        } else if (imageId === 3) {
+            const nbCat = categories.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase().includes('new balance'));
+            if (nbCat) {
+                searchParams.set('brand', nbCat._id);
                 setSearchParams(searchParams);
             }
         }
@@ -103,35 +121,37 @@ function Banner() {
                             className="relative cursor-pointer focus:outline-none"
                             onClick={() => handleBannerClick(image.id)}
                         >
-                            <div className="relative h-[450px] sm:h-[500px] md:h-[600px] lg:h-[650px] overflow-hidden group">
+                            <div 
+                                className="relative w-full overflow-hidden group"
+                                style={{ aspectRatio: '1024 / 426' }}
+                            >
                                 {/* Slide Image with hover zoom effect */}
                                 <img
-                                    className="w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
+                                    className="w-full h-full object-cover object-center transition-transform duration-[2000ms] ease-out group-hover:scale-105"
                                     src={image.url}
                                     alt={image.title}
                                     loading="lazy"
                                 />
 
-                                {/* Overlay Gradient */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent" />
-
-                                {/* Floating content container */}
-                                <div className="absolute inset-y-0 left-0 flex items-center px-6 sm:px-12 md:px-20 lg:px-28 text-white z-10 w-full md:w-3/4">
-                                    <div className="space-y-4 md:space-y-6 max-w-xl text-left">
-                                        <span className="inline-block px-3 py-1 bg-blue-600 text-[10px] md:text-xs font-extrabold uppercase tracking-widest rounded-md shadow-sm">
-                                            Bộ Sưu Tập Mới
-                                        </span>
-                                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight uppercase drop-shadow-md">
-                                            {image.title}
-                                        </h2>
-                                        <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-200 drop-shadow-sm font-medium leading-relaxed">
-                                            {image.subtitle}
-                                        </p>
-                                        <button className="inline-flex items-center gap-3 px-6 py-3 bg-white text-black hover:bg-blue-600 hover:text-white font-extrabold text-xs md:text-sm rounded-lg transition-all duration-300 shadow-lg transform hover:-translate-y-0.5 border-none cursor-pointer">
-                                            KHÁM PHÁ NGAY
-                                            <span className="text-sm font-light transition-transform duration-300 group-hover:translate-x-1">→</span>
-                                        </button>
+                                {/* Clean Editorial UI Card at bottom-left (No dark gradient, crisp white badges) */}
+                                <div className="absolute left-4 sm:left-10 md:left-16 bottom-5 sm:bottom-8 md:bottom-12 z-20 flex flex-col items-start gap-1">
+                                    <div className="bg-white text-black font-black text-[10px] sm:text-xs md:text-sm lg:text-base px-2.5 sm:px-3.5 py-1 uppercase tracking-wider shadow-sm">
+                                        {image.title}
                                     </div>
+                                    <div className="bg-white text-black text-[9px] sm:text-[11px] md:text-xs lg:text-sm px-2.5 sm:px-3.5 py-0.5 font-medium shadow-sm">
+                                        {image.subtitle}
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleBannerClick(image.id);
+                                        }}
+                                        className="mt-1.5 sm:mt-2.5 bg-white hover:bg-black text-black hover:text-white transition-all duration-300 text-[10px] sm:text-xs md:text-sm font-bold px-3.5 sm:px-5 py-1.5 sm:py-2.5 inline-flex items-center gap-2 border border-black/10 shadow-sm cursor-pointer group/btn"
+                                    >
+                                        <span>{image.buttonText}</span>
+                                        <span className="text-sm sm:text-base transition-transform duration-300 group-hover/btn:translate-x-1">→</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -3,7 +3,6 @@ import {
     SafetyCertificateOutlined, 
     CreditCardOutlined, 
     ClockCircleOutlined,
-    EnvironmentOutlined,
     PhoneOutlined,
     MailOutlined,
     FacebookOutlined,
@@ -67,10 +66,6 @@ function Footer() {
                     <div className="space-y-4">
                         <h3 className="text-white font-bold text-lg tracking-wider">SNEAKERHUB</h3>
                         <div className="space-y-3 text-sm text-gray-400">
-                            <div className="flex items-start gap-2.5">
-                                <EnvironmentOutlined className="mt-1 flex-shrink-0 text-white" />
-                                <span>Số 52, Đường số 6, Phường Hòa Hưng, Quận 10, TP. Hồ Chí Minh</span>
-                            </div>
                             <div className="flex items-center gap-2.5">
                                 <PhoneOutlined className="flex-shrink-0 text-white" />
                                 <a href="tel:0899227066" className="hover:text-white transition-colors">0899227066</a>
@@ -79,13 +74,6 @@ function Footer() {
                                 <MailOutlined className="flex-shrink-0 text-white" />
                                 <a href="mailto:doanthanhhuy1309@gmail.com" className="hover:text-white transition-colors">doanthanhhuy1309@gmail.com</a>
                             </div>
-                        </div>
-                        <div className="pt-2">
-                            <img 
-                                src="https://theme.hstatic.net/1000230627/1000889163/14/logo_sale_no_background.png?v=2340" 
-                                alt="Đã thông báo Bộ Công Thương" 
-                                className="h-10 w-auto opacity-80 hover:opacity-100 transition-opacity"
-                            />
                         </div>
                     </div>
 

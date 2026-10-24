@@ -1,0 +1,283 @@
+[
+  {
+    "_id": "6a7cb7b7ac2e7ae1b191c7d3",
+    "userId": "6a7cb5ba26b47f921ed5f23e",
+    "products": [],
+    "totalPrice": 0,
+    "finalPrice": 0,
+    "createdAt": "2026-08-12T18:13:11.028Z",
+    "updatedAt": "2026-08-12T18:13:11.028Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7d95901784f5d75659c8de",
+    "userId": "6a7d955f1784f5d75659c893",
+    "products": [],
+    "totalPrice": 0,
+    "finalPrice": 0,
+    "createdAt": "2026-08-13T09:59:44.313Z",
+    "updatedAt": "2026-08-13T09:59:44.313Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a81bccb4cd4ac47aa2842c8",
+    "userId": "6a7c416e967fb2386154f2cc",
+    "products": [],
+    "totalPrice": 0,
+    "finalPrice": 0,
+    "createdAt": "2026-08-16T13:36:11.753Z",
+    "updatedAt": "2026-10-21T02:29:00.898Z",
+    "__v": 2,
+    "address": "",
+    "email": "",
+    "fullName": "",
+    "phoneNumber": ""
+  },
+  {
+    "_id": "6ad771b2b45a1181445aa564",
+    "userId": "6ad771b2b45a1181445aa561",
+    "products": [],
+    "totalPrice": 0,
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:50:42.219Z",
+    "updatedAt": "2026-10-20T13:50:42.219Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad771c2f0df523d24cfa60d",
+    "userId": "6ad771c2f0df523d24cfa609",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "_id": "6ad771c2f0df523d24cfa60e"
+      }
+    ],
+    "totalPrice": 3790000,
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:50:58.124Z",
+    "updatedAt": "2026-10-20T13:50:58.142Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad77203da4938bd14c73bea",
+    "userId": "6ad77203da4938bd14c73be6",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "41",
+        "_id": "6ad77203da4938bd14c73bec"
+      }
+    ],
+    "totalPrice": 3790000,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:52:03.127Z",
+    "updatedAt": "2026-10-20T13:52:03.144Z",
+    "__v": 1
+  },
+  {
+    "_id": "6ad772147c868391772c418b",
+    "userId": "6ad772147c868391772c4188",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "41",
+        "_id": "6ad772157c868391772c4191"
+      },
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "42",
+        "_id": "6ad772157c868391772c4199"
+      }
+    ],
+    "totalPrice": 7580000,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:52:20.995Z",
+    "updatedAt": "2026-10-20T13:52:21.058Z",
+    "__v": 2
+  },
+  {
+    "_id": "6ad7721b7c868391772c41a6",
+    "userId": "6ad7721b7c868391772c41a3",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "41",
+        "_id": "6ad7721b7c868391772c41ac"
+      },
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "42",
+        "_id": "6ad7721b7c868391772c41b4"
+      }
+    ],
+    "totalPrice": 7580000,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:52:27.259Z",
+    "updatedAt": "2026-10-20T13:52:27.294Z",
+    "__v": 2
+  },
+  {
+    "_id": "6ad77251185ca5fe0bf6d2a5",
+    "userId": "6ad77251185ca5fe0bf6d2a3",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:53:21.920Z",
+    "updatedAt": "2026-10-20T13:53:21.920Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad77251185ca5fe0bf6d2aa",
+    "userId": "6ad77251185ca5fe0bf6d2a8",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T13:53:21.941Z",
+    "updatedAt": "2026-10-20T13:53:21.941Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad77525acd7db0d70807899",
+    "userId": "6ad77525acd7db0d70807897",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T14:05:25.154Z",
+    "updatedAt": "2026-10-20T14:05:25.154Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad7752bacd7db0d7080789f",
+    "userId": "6ad7752bacd7db0d7080789c",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "41",
+        "_id": "6ad7752bacd7db0d708078a1"
+      }
+    ],
+    "totalPrice": 3790000,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T14:05:31.023Z",
+    "updatedAt": "2026-10-20T14:05:31.041Z",
+    "__v": 1
+  },
+  {
+    "_id": "6ad7752facd7db0d708078a7",
+    "userId": "6ad7752facd7db0d708078a5",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "41",
+        "_id": "6ad77530acd7db0d708078ac"
+      },
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "size": "42",
+        "_id": "6ad77530acd7db0d708078b3"
+      }
+    ],
+    "totalPrice": 7580000,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T14:05:35.992Z",
+    "updatedAt": "2026-10-20T14:05:36.028Z",
+    "__v": 2
+  },
+  {
+    "_id": "6ad77534acd7db0d708078be",
+    "userId": "6ad77534acd7db0d708078bc",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T14:05:40.429Z",
+    "updatedAt": "2026-10-20T14:05:40.429Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad77534acd7db0d708078c3",
+    "userId": "6ad77534acd7db0d708078c1",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T14:05:40.441Z",
+    "updatedAt": "2026-10-20T14:05:40.441Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad78593d3b3ec1bf0faedf8",
+    "userId": "6ad76948173f1f7dc3e3969c",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-20T15:15:31.346Z",
+    "updatedAt": "2026-10-20T15:15:31.346Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad8bdbb770b9b60ef404276",
+    "userId": "6ad78a1f0cd49cba01f96759",
+    "products": [],
+    "totalPrice": 0,
+    "fullName": "",
+    "phoneNumber": "",
+    "address": "",
+    "email": "",
+    "finalPrice": 0,
+    "createdAt": "2026-10-21T13:27:23.851Z",
+    "updatedAt": "2026-10-21T13:27:23.851Z",
+    "__v": 0
+  }
+]

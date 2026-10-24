@@ -20,6 +20,7 @@ function Header() {
     const [categories, setCategories] = useState([]);
     const [showWishlist, setShowWishlist] = useState(false);
     const [wishlistItems, setWishlistItems] = useState([]);
+    const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -295,11 +296,57 @@ function Header() {
                                 </div>
                             </Dropdown>
                         ) : (
-                            <Link to={'/login'}>
-                                <Button type="primary" icon={<UserOutlined />} size="large" className="rounded-lg">
-                                    Đăng nhập
-                                </Button>
-                            </Link>
+                            <Dropdown
+                                menu={{ items: [] }}
+                                open={authDropdownOpen}
+                                onOpenChange={setAuthDropdownOpen}
+                                placement="bottomRight"
+                                trigger={['click']}
+                                dropdownRender={() => (
+                                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 w-72 text-center mt-2">
+                                        <p className="text-sm font-medium text-gray-800 leading-relaxed mb-5">
+                                            Theo dõi đơn hàng và thanh toán dễ dàng hơn
+                                        </p>
+                                        <div className="flex flex-col gap-2.5">
+                                            <Link
+                                                to="/login"
+                                                onClick={() => setAuthDropdownOpen(false)}
+                                                style={{
+                                                    backgroundColor: '#000000',
+                                                    color: '#ffffff',
+                                                    display: 'block',
+                                                    textDecoration: 'none',
+                                                    border: 'none',
+                                                }}
+                                                className="w-full py-2.5 px-4 font-semibold rounded-full text-sm text-center transition-all duration-200 shadow-sm hover:opacity-90 cursor-pointer"
+                                            >
+                                                Đăng Nhập
+                                            </Link>
+                                            <Link
+                                                to="/register"
+                                                onClick={() => setAuthDropdownOpen(false)}
+                                                style={{
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#000000',
+                                                    display: 'block',
+                                                    textDecoration: 'none',
+                                                    border: 'none',
+                                                }}
+                                                className="w-full py-2.5 px-4 font-semibold rounded-full text-sm text-center transition-all duration-200 hover:bg-gray-100 cursor-pointer"
+                                            >
+                                                Tạo tài khoản
+                                            </Link>
+                                        </div>
+                                    </div>
+                                )}
+                            >
+                                <Button
+                                    type="text"
+                                    icon={<UserOutlined style={{ fontSize: '20px' }} />}
+                                    size="large"
+                                    className="hover:bg-gray-100 flex items-center justify-center text-gray-800"
+                                />
+                            </Dropdown>
                         )}
                     </div>
                 </div>

@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "6a7da4e3b7b654a704d43844",
+    "nameCoupon": "123",
+    "discount": 10,
+    "quantity": 0,
+    "startDate": "2026-08-13T00:00:00.000Z",
+    "endDate": "2026-08-21T00:00:00.000Z",
+    "minPrice": 1,
+    "createdAt": "2026-08-13T11:05:07.092Z",
+    "updatedAt": "2026-08-13T11:10:57.114Z",
+    "__v": 0
+  }
+]

@@ -37,24 +37,32 @@ function HomePage() {
     const availableSizes = ['37', '38', '39', '40', '41', '42', '43', '44'];
 
     const fetchCategory = async () => {
-        const res = await listCategory();
-        const filtered = (res.metadata || []).filter(cat => {
-            const name = cat.nameCategory || "";
-            return !name.includes(',') && 
-                   !name.includes('Các dòng') && 
-                   !name.includes('chạy bộ') && 
-                   !name.includes('bóng rổ') &&
-                   !name.includes('Samba') &&
-                   !name.includes('Pickleball');
-        });
-        setDataCategory(filtered);
+        try {
+            const res = await listCategory();
+            const filtered = (res.metadata || []).filter(cat => {
+                const name = cat.nameCategory || "";
+                return !name.includes(',') && 
+                       !name.includes('Các dòng') && 
+                       !name.includes('chạy bộ') && 
+                       !name.includes('bóng rổ') &&
+                       !name.includes('Samba') &&
+                       !name.includes('Pickleball');
+            });
+            setDataCategory(filtered);
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+        }
     };
 
     const fetchProduct = async () => {
-        const res = await listProduct();
-        const rawProducts = res.metadata || [];
-        const shuffled = [...rawProducts].sort(() => Math.random() - 0.5);
-        setDataProduct(shuffled);
+        try {
+            const res = await listProduct();
+            const rawProducts = res.metadata || [];
+            const shuffled = [...rawProducts].sort(() => Math.random() - 0.5);
+            setDataProduct(shuffled);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+        }
     };
 
     const fetchFlashSale = async () => {
@@ -72,10 +80,15 @@ function HomePage() {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            await fetchCategory();
-            await fetchProduct();
-            await fetchFlashSale();
-            setLoading(false);
+            try {
+                await fetchCategory();
+                await fetchProduct();
+                await fetchFlashSale();
+            } catch (err) {
+                console.error('Error in initial load:', err);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchData();
     }, []);
@@ -345,11 +358,31 @@ function HomePage() {
         .filter(Boolean)
         .join(', ');
 
+    const isAdidas = selectedCategories.some(catId => {
+        const cat = dataCategory.find(c => c._id === catId);
+        return (cat?.nameCategory || catId || '').toLowerCase().includes('adidas');
+    });
+
+    const isAsics = selectedCategories.some(catId => {
+        const cat = dataCategory.find(c => c._id === catId);
+        return (cat?.nameCategory || catId || '').toLowerCase().includes('asics');
+    });
+
     // Display categories on the homepage logo bar
     const brandCategories = dataCategory;
 
     // Filtered lists for landing page sections
     const flashDealProducts = dataProduct.filter(p => p.discountProduct > 0);
+    const flashDealIds = new Set(flashDealProducts.slice(0, 5).map(p => p._id));
+
+    const newBalanceProducts = dataProduct.filter(p => 
+        isProductOfBrand(p, 'new balance') || 
+        p.nameProduct.toLowerCase().includes('new balance')
+    );
+    const newBalanceDisplay = [
+        ...newBalanceProducts.filter(p => !flashDealIds.has(p._id)),
+        ...newBalanceProducts.filter(p => flashDealIds.has(p._id))
+    ];
     
     const popularProducts = dataProduct.filter(p => 
         p.nameProduct.toLowerCase().includes('travis scott') || 
@@ -366,8 +399,9 @@ function HomePage() {
 
     const shownIds = new Set([
         ...flashDealProducts.slice(0, 5).map(p => p._id),
+        ...newBalanceDisplay.slice(0, 10).map(p => p._id),
         ...popularProducts.slice(0, 5).map(p => p._id),
-        ...jordanProducts.slice(0, 5).map(p => p._id)
+        ...jordanProducts.slice(0, 10).map(p => p._id)
     ]);
     const otherProducts = dataProduct.filter(p => !shownIds.has(p._id));
 
@@ -454,6 +488,109 @@ function HomePage() {
                                 </section>
                             )}
 
+                            {/* 1.5. NEW BALANCE SECTION (Between Flash Deal & Promotional Duo Banner) */}
+                            {newBalanceDisplay.length > 0 && (
+                                <section className="reveal-item" data-delay="30">
+                                    <div className="flex flex-col items-center justify-center text-center mb-10">
+                                        <div 
+                                            onClick={() => {
+                                                const nbCat = dataCategory.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase().includes('new balance'));
+                                                if (nbCat) {
+                                                    setSelectedCategory(nbCat._id);
+                                                } else {
+                                                    setSelectedCategory('new balance');
+                                                }
+                                            }}
+                                            className="group cursor-pointer inline-flex flex-col items-center select-none"
+                                        >
+                                            <h2 className="relative text-2xl md:text-3xl font-bold text-black uppercase tracking-widest pb-1.5 after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-[3px] after:bg-black after:transition-all after:duration-300 group-hover:after:w-full">
+                                                New Balance
+                                            </h2>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                        {newBalanceDisplay.slice(0, 10).map((item, idx) => (
+                                            <CardBody key={item._id} dataItem={item} index={idx + 2} />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* PROMOTIONAL DUO BANNER (ADIDAS & ASICS COLLECTIONS) - FULL BLEED EDGE-TO-EDGE */}
+                            <section 
+                                className="reveal-item my-14 relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] overflow-hidden" 
+                                data-delay="50"
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-0 w-full">
+                                    {/* Adidas Collection Banner */}
+                                    <div
+                                        onClick={() => {
+                                            const adidasCat = dataCategory.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase() === 'adidas');
+                                            if (adidasCat) {
+                                                setSelectedCategory(adidasCat._id);
+                                            } else {
+                                                setSelectedCategory('adidas');
+                                            }
+                                        }}
+                                        style={{ aspectRatio: '750 / 583' }}
+                                        className="relative group cursor-pointer overflow-hidden w-full"
+                                    >
+                                        <img
+                                            src="https://res.cloudinary.com/u1vmfjx6/image/upload/v1792755206/sneakerhub/xbjebwdndhwkcu9oth3g.webp"
+                                            alt="Adidas Collection"
+                                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                            loading="lazy"
+                                        />
+                                        {/* Bottom Dark Gradient */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
+                                        
+                                        {/* Content */}
+                                        <div className="absolute inset-x-0 bottom-8 sm:bottom-12 md:bottom-16 flex flex-col items-center justify-center text-center px-4 space-y-4 z-10 pointer-events-none">
+                                            <h3 className="text-white font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl tracking-widest uppercase drop-shadow-2xl">
+                                                ADIDAS COLLECTION
+                                            </h3>
+                                            <button className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black hover:!bg-black hover:!text-white group-hover:!bg-black group-hover:!text-white font-bold text-sm sm:text-base rounded-full transition-all duration-300 shadow-xl border-none cursor-pointer pointer-events-auto">
+                                                Khám phá ngay <span className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Asics Collection Banner */}
+                                    <div
+                                        onClick={() => {
+                                            const asicsCat = dataCategory.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase() === 'asics');
+                                            if (asicsCat) {
+                                                setSelectedCategory(asicsCat._id);
+                                            } else {
+                                                setSelectedCategory('asics');
+                                            }
+                                        }}
+                                        style={{ aspectRatio: '750 / 583' }}
+                                        className="relative group cursor-pointer overflow-hidden w-full"
+                                    >
+                                        <img
+                                            src="https://res.cloudinary.com/u1vmfjx6/image/upload/v1792755207/sneakerhub/xrorxxbeg6l2cp019qfl.webp"
+                                            alt="Asics Collection"
+                                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                            loading="lazy"
+                                        />
+                                        {/* Bottom Dark Gradient */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pointer-events-none" />
+                                        
+                                        {/* Content */}
+                                        <div className="absolute inset-x-0 bottom-8 sm:bottom-12 md:bottom-16 flex flex-col items-center justify-center text-center px-4 space-y-4 z-10 pointer-events-none">
+                                            <h3 className="text-white font-black text-2xl sm:text-3xl md:text-4xl lg:text-5xl tracking-widest uppercase drop-shadow-2xl">
+                                                ASICS COLLECTION
+                                            </h3>
+                                            <button className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black hover:!bg-black hover:!text-white group-hover:!bg-black group-hover:!text-white font-bold text-sm sm:text-base rounded-full transition-all duration-300 shadow-xl border-none cursor-pointer pointer-events-auto">
+                                                Khám phá ngay <span className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
                             {/* 2. TOP POPULAR SECTION */}
                             {popularProducts.length > 0 && (
                                 <section className="reveal-item" data-delay="100">
@@ -498,12 +635,47 @@ function HomePage() {
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                                        {jordanProducts.slice(0, 5).map((item, idx) => (
+                                        {jordanProducts.slice(0, 10).map((item, idx) => (
                                             <CardBody key={item._id} dataItem={item} index={idx + 10} />
                                         ))}
                                     </div>
                                 </section>
                             )}
+
+                            {/* PROMOTIONAL NIKE HERO BANNER (Between Air Jordan 1 and Sneaker) */}
+                            <section 
+                                className="reveal-item my-14 relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] overflow-hidden" 
+                                data-delay="150"
+                            >
+                                <div
+                                    onClick={() => {
+                                        const nikeCat = dataCategory.find(cat => cat.nameCategory && cat.nameCategory.toLowerCase() === 'nike');
+                                        if (nikeCat) {
+                                            setSelectedCategory(nikeCat._id);
+                                        } else {
+                                            setSelectedCategory('nike');
+                                        }
+                                    }}
+                                    style={{ aspectRatio: '1024 / 384' }}
+                                    className="relative group cursor-pointer overflow-hidden w-full"
+                                >
+                                    <img
+                                        src="https://res.cloudinary.com/u1vmfjx6/image/upload/q_auto:best,f_auto/v1792758051/sneakerhub/banner_nike_collection.png"
+                                        alt="Nike Collection Banner"
+                                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                        loading="lazy"
+                                    />
+                                    {/* Subtle Bottom Gradient */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+                                    {/* Khám phá ngay Button with UX/UI matching Image 3 */}
+                                    <div className="absolute inset-x-0 bottom-6 sm:bottom-8 md:bottom-10 lg:bottom-12 flex justify-center items-center z-10 pointer-events-none">
+                                        <button className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black hover:!bg-black hover:!text-white group-hover:!bg-black group-hover:!text-white font-bold text-sm sm:text-base rounded-full transition-all duration-300 shadow-2xl border-none cursor-pointer pointer-events-auto">
+                                            Khám phá ngay <span className="transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
 
                             {/* 4. SNEAKER SECTION */}
                             {otherProducts.length > 0 && (
@@ -531,6 +703,28 @@ function HomePage() {
                 ) : (
                     /* BRAND CATEGORY VIEW (With sidebar filters) */
                     <div>
+                        {/* Full-bleed Brand Hero Banner (Adidas / Asics) */}
+                        {(isAdidas || isAsics) && (
+                            <div className="mb-10 relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] overflow-hidden reveal-item" data-delay="0">
+                                {isAdidas && (
+                                    <img
+                                        src="https://res.cloudinary.com/u1vmfjx6/image/upload/q_auto:best,f_auto/v1792757660/sneakerhub/banner_adidas_jennie_upscaled.jpg"
+                                        alt="Adidas Jennie Banner"
+                                        className="w-full h-auto object-cover block"
+                                        loading="lazy"
+                                    />
+                                )}
+                                {isAsics && (
+                                    <img
+                                        src="https://res.cloudinary.com/u1vmfjx6/image/upload/q_auto:best,f_auto/v1792757661/sneakerhub/banner_asics_upscaled.jpg"
+                                        alt="Asics Collection Banner"
+                                        className="w-full h-auto object-cover block"
+                                        loading="lazy"
+                                    />
+                                )}
+                            </div>
+                        )}
+
                         <div className="mb-6 text-center reveal-item" data-delay="0">
                             <h1 className="text-5xl font-extralight tracking-widest text-gray-800 lowercase my-4">
                                 {activeBrandName}

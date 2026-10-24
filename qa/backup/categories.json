@@ -1,0 +1,354 @@
+[
+  {
+    "_id": "6a7c54a848bb5df19e8f16c8",
+    "nameCategory": "Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "__v": 0,
+    "createdAt": "2026-08-12T11:10:32.573Z",
+    "updatedAt": "2026-10-20T15:27:38.310Z"
+  },
+  {
+    "_id": "6a7c54a848bb5df19e8f16c9",
+    "nameCategory": "Adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "__v": 0,
+    "createdAt": "2026-08-12T11:10:32.574Z",
+    "updatedAt": "2026-10-20T15:27:38.316Z"
+  },
+  {
+    "_id": "6a7c54a848bb5df19e8f16ca",
+    "nameCategory": "Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "__v": 0,
+    "createdAt": "2026-08-12T11:10:32.574Z",
+    "updatedAt": "2026-10-20T15:27:38.318Z"
+  },
+  {
+    "_id": "6a7c54a848bb5df19e8f16cb",
+    "nameCategory": "New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "__v": 0,
+    "createdAt": "2026-08-12T11:10:32.574Z",
+    "updatedAt": "2026-10-20T15:27:38.321Z"
+  },
+  {
+    "_id": "6a7c54a848bb5df19e8f16cc",
+    "nameCategory": "Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "__v": 0,
+    "createdAt": "2026-08-12T11:10:32.574Z",
+    "updatedAt": "2026-10-20T15:27:38.323Z"
+  },
+  {
+    "_id": "6a7c852d23859c359e28fbc1",
+    "nameCategory": "Giày chạy bộ nam, giày chạy nike, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:37:33.710Z",
+    "updatedAt": "2026-10-20T15:27:38.326Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c861e170865dc65c204fc",
+    "nameCategory": "adidas Samba, Các dòng bóng rổ Nike khác, Giày bóng rổ nam, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:41:34.116Z",
+    "updatedAt": "2026-10-20T15:27:38.329Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c879ed963e84ff2c47cdf",
+    "nameCategory": "Giày bóng rổ nam, Nike KD (Kevin Durant), Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:47:58.550Z",
+    "updatedAt": "2026-10-20T15:27:38.332Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c879ed963e84ff2c47ce5",
+    "nameCategory": "Giày Tennis/Pickleball nữ, Nike Vapor 12, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:47:58.564Z",
+    "updatedAt": "2026-10-20T15:27:38.334Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c879ed963e84ff2c47ceb",
+    "nameCategory": "Air Zoom, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:47:58.574Z",
+    "updatedAt": "2026-10-20T15:27:38.337Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c88658736d7380de4c03c",
+    "nameCategory": "Giày Pickleball Nike, Giày Tennis/Pickleball nam, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:51:17.815Z",
+    "updatedAt": "2026-10-20T15:27:38.340Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c88658736d7380de4c042",
+    "nameCategory": "Giày bóng rổ nam, Nike LeBron, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:51:17.827Z",
+    "updatedAt": "2026-10-20T15:27:38.342Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c88658736d7380de4c04c",
+    "nameCategory": "Giày chạy bộ nữ, giày chạy nike, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:51:17.838Z",
+    "updatedAt": "2026-10-20T15:27:38.343Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c88658736d7380de4c052",
+    "nameCategory": "Giày bóng rổ nam, Các dòng bóng rổ Nike khác, Nike",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510053/sneakerhub/Nike-chinh-hang-tai-Snea_73f7611776c1ff61.jpg",
+    "createdAt": "2026-08-12T14:51:17.844Z",
+    "updatedAt": "2026-10-20T15:27:38.345Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c89b439bc9c2967fab3ae",
+    "nameCategory": "Giày Tennis/Pickleball nữ, Giày Pickleball adidas, adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "createdAt": "2026-08-12T14:56:52.602Z",
+    "updatedAt": "2026-10-20T15:27:38.347Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c89b439bc9c2967fab3b4",
+    "nameCategory": "Giày thể thao nữ, adidas Samba, adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "createdAt": "2026-08-12T14:56:52.615Z",
+    "updatedAt": "2026-10-20T15:27:38.349Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c89b439bc9c2967fab3ba",
+    "nameCategory": "adidas Samba, Giày thể thao nữ, adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "createdAt": "2026-08-12T14:56:52.630Z",
+    "updatedAt": "2026-10-20T15:27:38.350Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c89b439bc9c2967fab3c0",
+    "nameCategory": "Giày thể thao nữ, Các dòng adidas khác, adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "createdAt": "2026-08-12T14:56:52.636Z",
+    "updatedAt": "2026-10-20T15:27:38.351Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8a9198e004e81a39e14e",
+    "nameCategory": "Giày Tennis/Pickleball nam, Giày Pickleball adidas, adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "createdAt": "2026-08-12T15:00:33.015Z",
+    "updatedAt": "2026-10-20T15:27:38.352Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8a9198e004e81a39e158",
+    "nameCategory": "Giày thể thao nam, Các dòng adidas khác, adidas",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510054/sneakerhub/adidas-chinh-hang-tai-Sn_9804e1bff7e09889.jpg",
+    "createdAt": "2026-08-12T15:00:33.031Z",
+    "updatedAt": "2026-10-20T15:27:38.355Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8eb3784c4410badd0313",
+    "nameCategory": "Air Jordan 1 Low, Giày thể thao nam, Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "createdAt": "2026-08-12T15:18:11.173Z",
+    "updatedAt": "2026-10-20T15:27:38.357Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8eb3784c4410badd0319",
+    "nameCategory": "Air Jordan 1 Low, Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "createdAt": "2026-08-12T15:18:11.183Z",
+    "updatedAt": "2026-10-20T15:27:38.359Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8eb3784c4410badd0323",
+    "nameCategory": "Giày thể thao nữ, Air Jordan 1 Low, Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "createdAt": "2026-08-12T15:18:11.195Z",
+    "updatedAt": "2026-10-20T15:27:38.361Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8fb4e2afbad9c0823941",
+    "nameCategory": "Air Jordan 1 Low, KBN, Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "createdAt": "2026-08-12T15:22:28.505Z",
+    "updatedAt": "2026-10-20T15:27:38.362Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8fb4e2afbad9c082394b",
+    "nameCategory": "Air Jordan 1, Air Jordan 1 Low, Giày Jordan, Giày thể thao nam, Nam, Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "createdAt": "2026-08-12T15:22:28.521Z",
+    "updatedAt": "2026-10-20T15:27:38.364Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c8fb4e2afbad9c0823951",
+    "nameCategory": "Giày Jordan, Air Jordan 1, Air Jordan 1 Low, Giày thể thao nam, Nam, Jordan",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/Jordan-chinh-hang-tai-Sn_cf6cd2d2b3d49fdc.jpg",
+    "createdAt": "2026-08-12T15:22:28.527Z",
+    "updatedAt": "2026-10-20T15:27:38.366Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c906ebbc280955083a8a2",
+    "nameCategory": "Giày thể thao nữ, Các dòng New Balance khác, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:25:34.180Z",
+    "updatedAt": "2026-10-20T15:27:38.367Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c906ebbc280955083a8a8",
+    "nameCategory": "Các dòng New Balance khác, Giày thể thao nữ, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:25:34.196Z",
+    "updatedAt": "2026-10-20T15:27:38.369Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c906ebbc280955083a8ae",
+    "nameCategory": "Giày thể thao nữ, Các dòng New Balance khác, Giày thể thao nam, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:25:34.206Z",
+    "updatedAt": "2026-10-20T15:27:38.371Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c906ebbc280955083a8b4",
+    "nameCategory": "Các dòng New Balance khác, Giày thể thao nam, Giày thể thao nữ, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:25:34.212Z",
+    "updatedAt": "2026-10-20T15:27:38.372Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c906ebbc280955083a8ba",
+    "nameCategory": "Sneaker, Flash Deal, Giày New Balance, New Balance 9060, Sale, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:25:34.222Z",
+    "updatedAt": "2026-10-20T15:27:38.374Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c91662193c9b98314b198",
+    "nameCategory": "Giày New Balance, New Balance 1906, Sale, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:29:42.773Z",
+    "updatedAt": "2026-10-20T15:27:38.375Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c91662193c9b98314b19e",
+    "nameCategory": "Giày New Balance, New Balance 530, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:29:42.785Z",
+    "updatedAt": "2026-10-20T15:27:38.377Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c91662193c9b98314b1ac",
+    "nameCategory": "Giày New Balance, New Balance 574, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:29:42.802Z",
+    "updatedAt": "2026-10-20T15:27:38.378Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c91662193c9b98314b1b2",
+    "nameCategory": "Các dòng New Balance khác, Giày New Balance, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:29:42.806Z",
+    "updatedAt": "2026-10-20T15:27:38.379Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c91662193c9b98314b1b8",
+    "nameCategory": "Giày New Balance, Các dòng New Balance khác, New Balance",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510055/sneakerhub/New-Balance-chinh-hang-t_0b8fec620584974a.jpg",
+    "createdAt": "2026-08-12T15:29:42.811Z",
+    "updatedAt": "2026-10-20T15:27:38.381Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a53",
+    "nameCategory": "Giày Tennis/Pickleball nữ, Giày Pickleball Asics, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.466Z",
+    "updatedAt": "2026-10-20T15:27:38.382Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a59",
+    "nameCategory": "ASICS Gel-Challenger, Giày Tennis/Pickleball nữ, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.483Z",
+    "updatedAt": "2026-10-20T15:27:38.384Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a63",
+    "nameCategory": "Giày Tennis/Pickleball nam, ASICS Gel-Challenger, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.499Z",
+    "updatedAt": "2026-10-20T15:27:38.386Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a69",
+    "nameCategory": "Giày chạy bộ nam, Giày chạy Asics, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.504Z",
+    "updatedAt": "2026-10-20T15:27:38.387Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a6f",
+    "nameCategory": "Pickleball, Giày pickleball, Giày Pickleball Asics, Giày Tennis/Pickleball nữ, Giày thể thao nữ, Nữ, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.510Z",
+    "updatedAt": "2026-10-20T15:27:38.389Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a75",
+    "nameCategory": "Nữ, Asics Solution Speed FF 4, Giày pickleball, Giày Pickleball Asics, Giày Tennis/Pickleball nữ, Giày thể thao nữ, Pickleball, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.516Z",
+    "updatedAt": "2026-10-20T15:27:38.391Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a7f",
+    "nameCategory": "Nữ, Asics Gel-Resolution X, Giày pickleball, Giày Pickleball Asics, Giày Tennis/Pickleball nữ, Giày thể thao nữ, Pickleball, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.525Z",
+    "updatedAt": "2026-10-20T15:27:38.393Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7c9248d170a8d6b6489a85",
+    "nameCategory": "Nam, Giày pickleball, Giày Pickleball Asics, Giày Tennis/Pickleball nam, Giày thể thao nam, Pickleball, Asics",
+    "imageCategory": "https://res.cloudinary.com/u1vmfjx6/image/upload/v1792510056/sneakerhub/asics_0f47f3e47d0cd90f.jpg",
+    "createdAt": "2026-08-12T15:33:28.532Z",
+    "updatedAt": "2026-10-20T15:27:38.394Z",
+    "__v": 0
+  }
+]

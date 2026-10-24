@@ -1,0 +1,298 @@
+[
+  {
+    "_id": "6a7cb65a2b1a01c7519b5648",
+    "userId": "6a7cb5ba26b47f921ed5f23e",
+    "products": [
+      {
+        "productId": "6a7c861e170865dc65c204ff",
+        "quantity": 1,
+        "_id": "6a7cb6372b1a01c7519b5632"
+      }
+    ],
+    "totalPrice": 3690000,
+    "fullName": "Hy Test 1",
+    "phoneNumber": "093311111",
+    "address": "K353/17",
+    "email": "hyhy@gmail.com",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-12T18:07:22.622Z",
+    "updatedAt": "2026-08-13T11:23:27.351Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7cb7b7ac2e7ae1b191c7cf",
+    "userId": "6a7cb5ba26b47f921ed5f23e",
+    "products": [
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 2,
+        "_id": "6a7cb74dac2e7ae1b191c78a"
+      }
+    ],
+    "totalPrice": 7580000,
+    "fullName": "Be Hy Test",
+    "phoneNumber": "0899227066",
+    "address": "Ho Chi Minh City",
+    "email": "hyhy123@gmail.com",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-12T18:13:11.016Z",
+    "updatedAt": "2026-08-12T18:27:31.709Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7d8f86405ef3c1de921daf",
+    "userId": "6a7d8e6fbccb3b951c703912",
+    "products": [
+      {
+        "productId": "6a7c8eb3784c4410badd031c",
+        "quantity": 1,
+        "_id": "6a7d8f86405ef3c1de921db0"
+      }
+    ],
+    "totalPrice": 3690000,
+    "fullName": "Nguyễn Minh Tuấn",
+    "phoneNumber": "0987654321",
+    "address": "123 Đường Láng, Đống Đa, Hà Nội",
+    "email": "nguyenminhtuan@gmail.com",
+    "finalPrice": 3690000,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-13T09:33:58.112Z",
+    "updatedAt": "2026-08-13T09:33:58.112Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7d95901784f5d75659c8da",
+    "userId": "6a7d955f1784f5d75659c893",
+    "products": [
+      {
+        "productId": "6a7c88658736d7380de4c049",
+        "quantity": 1,
+        "_id": "6a7d956e1784f5d75659c8c0"
+      }
+    ],
+    "totalPrice": 4390000,
+    "fullName": "Test User Automatic",
+    "phoneNumber": "0987654321",
+    "address": "123 123 Duong Lang, Ha Noi",
+    "email": "auto_test_165822@test.com",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-13T09:59:44.304Z",
+    "updatedAt": "2026-08-13T10:02:28.960Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7da6418f773d671e7f4bec",
+    "userId": "6a7c416e967fb2386154f2cc",
+    "products": [
+      {
+        "productId": "6a7c3faf9cce4e835700dc0a",
+        "quantity": 1,
+        "_id": "6a7c41af01082f828e3a5200"
+      },
+      {
+        "productId": "6a7c4e11d0fd5c7074da25bb",
+        "quantity": 1,
+        "_id": "6a7c521dcf48387ce96e2051"
+      },
+      {
+        "productId": "6a7c4e11d0fd5c7074da25bc",
+        "quantity": 1,
+        "_id": "6a7c5232cf48387ce96e205f"
+      },
+      {
+        "productId": "6a7c9248d170a8d6b6489a7c",
+        "quantity": 1,
+        "_id": "6a7da4f2b7b654a704d43863"
+      },
+      {
+        "productId": "6a7c88658736d7380de4c055",
+        "quantity": 1,
+        "_id": "6a7da55a0729181c15033021"
+      }
+    ],
+    "totalPrice": 5480000.009374,
+    "fullName": "312",
+    "phoneNumber": "321321",
+    "address": "321321",
+    "email": "321321",
+    "finalPrice": 4932000.0084366,
+    "couponId": "6a7da4e3b7b654a704d43844",
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-13T11:10:57.107Z",
+    "updatedAt": "2026-08-13T11:16:35.232Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7da7398f773d671e7f4c9a",
+    "userId": "6a7c416e967fb2386154f2cc",
+    "products": [
+      {
+        "productId": "6a7c9248d170a8d6b6489a7c",
+        "quantity": 1,
+        "_id": "6a7da6b78f773d671e7f4c78"
+      }
+    ],
+    "totalPrice": 2790000.00932,
+    "fullName": "Doan Thanh Huy",
+    "phoneNumber": "0987654321",
+    "address": "123 Nguyen Hue, Quan 1, TP. HCM",
+    "email": "huy.doan@example.com",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-13T11:15:05.560Z",
+    "updatedAt": "2026-08-13T11:16:36.644Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a7daaf6f453a68dae7cbfad",
+    "userId": "6a7c416e967fb2386154f2cc",
+    "products": [
+      {
+        "productId": "6a7c8fb4e2afbad9c0823944",
+        "quantity": 1,
+        "_id": "6a7daa22f453a68dae7cbf06"
+      },
+      {
+        "productId": "6a7c852d23859c359e28fbc4",
+        "quantity": 1,
+        "_id": "6a7daac0f453a68dae7cbf72"
+      }
+    ],
+    "totalPrice": 7480000,
+    "fullName": "Doan Thanh Huy",
+    "phoneNumber": "0901234567",
+    "address": "123 Duong ABC, Quan 1, TP. HCM",
+    "email": "huy.doan@example.com",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-13T11:31:02.044Z",
+    "updatedAt": "2026-10-21T02:15:52.033Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a81bccb4cd4ac47aa2842c4",
+    "userId": "6a7c416e967fb2386154f2cc",
+    "products": [
+      {
+        "productId": "6a7c906ebbc280955083a8bd",
+        "quantity": 1,
+        "_id": "6a81bcb94cd4ac47aa2842aa"
+      }
+    ],
+    "totalPrice": 1990000.008,
+    "fullName": "Doan Thanh Huy",
+    "phoneNumber": "0899227066",
+    "address": "3213",
+    "email": "31321",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "cod",
+    "createdAt": "2026-08-16T13:36:11.732Z",
+    "updatedAt": "2026-08-16T13:36:22.630Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad7a38d6c0bbb8c62cd9f08",
+    "userId": "6ad78a1f0cd49cba01f96759",
+    "products": [
+      {
+        "productId": "6a7c91662193c9b98314b19b",
+        "quantity": 1,
+        "_id": "6ad7a168056d112efd0ec796"
+      }
+    ],
+    "totalPrice": 2990000,
+    "fullName": "Le Van Nghia",
+    "phoneNumber": "0899221113",
+    "address": "Da Nang,VIetNam",
+    "email": "levannghia@gmail.com",
+    "finalPrice": 0,
+    "status": "confirmed",
+    "paymentMethod": "vnpay",
+    "createdAt": "2026-10-20T17:23:25.431Z",
+    "updatedAt": "2026-10-20T17:32:54.365Z",
+    "__v": 0,
+    "confirmedBy": "6a7c416e967fb2386154f2cc"
+  },
+  {
+    "_id": "6ad8128edeaf5eec183934a3",
+    "userId": "6ad78a1f0cd49cba01f96759",
+    "products": [
+      {
+        "productId": "6a7c89b439bc9c2967fab3bd",
+        "quantity": 1,
+        "_id": "6ad81248deaf5eec18393473"
+      }
+    ],
+    "totalPrice": 2690000,
+    "fullName": "Le Van Nghia",
+    "phoneNumber": "0899221113",
+    "address": "Da Nang,VIetNam",
+    "email": "levannghia@gmail.com",
+    "finalPrice": 0,
+    "status": "completed",
+    "paymentMethod": "vnpay",
+    "createdAt": "2026-10-21T01:17:02.414Z",
+    "updatedAt": "2026-10-21T06:56:10.259Z",
+    "__v": 0,
+    "internalNote": ""
+  },
+  {
+    "_id": "6ad8bd76770b9b60ef40420c",
+    "userId": "6ad78a1f0cd49cba01f96759",
+    "products": [
+      {
+        "productId": "6a7c9248d170a8d6b6489a7c",
+        "quantity": 1,
+        "size": "38",
+        "_id": "6ad8bd4e770b9b60ef4041eb"
+      }
+    ],
+    "internalNote": "",
+    "totalPrice": 2790000,
+    "fullName": "Le Van Nghia",
+    "phoneNumber": "0899221113",
+    "address": "Da Nang,VIetNam",
+    "email": "levannghia@gmail.com",
+    "finalPrice": 0,
+    "status": "pending",
+    "paymentMethod": "cod",
+    "createdAt": "2026-10-21T13:26:14.690Z",
+    "updatedAt": "2026-10-21T13:26:14.690Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad8bdbb770b9b60ef404272",
+    "userId": "6ad78a1f0cd49cba01f96759",
+    "products": [
+      {
+        "productId": "6a7c9248d170a8d6b6489a7c",
+        "quantity": 1,
+        "size": "37",
+        "_id": "6ad8bd8c770b9b60ef40424b"
+      }
+    ],
+    "internalNote": "",
+    "totalPrice": 2790000,
+    "fullName": "Le Van Nghia",
+    "phoneNumber": "0899221113",
+    "address": "Da Nang,VIetNam",
+    "email": "levannghia@gmail.com",
+    "finalPrice": 0,
+    "status": "confirmed",
+    "paymentMethod": "vnpay",
+    "createdAt": "2026-10-21T13:27:23.846Z",
+    "updatedAt": "2026-10-21T13:27:23.846Z",
+    "__v": 0
+  }
+]
